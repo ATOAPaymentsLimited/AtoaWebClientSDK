@@ -20,7 +20,7 @@
   ],
   "author": "Yash Tiwari",
   "license": "MIT",
-  "main": "dist/atoa-web-client-sdk.es.js",
+  "main": "dist/atoa-web-client-sdk.js",
   "files": [
     "dist"
   ],
