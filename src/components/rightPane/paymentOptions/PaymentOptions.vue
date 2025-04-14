@@ -229,7 +229,7 @@ const checkPaymentStatus = async () => {
       { env: environment || EnvironmentTypeEnum.PRODUCTION }
     );
 
-    if (!['PAYMENT_NOT_INITIATED', 'AWAITING_AUTHORIZATION'].includes(transactionDetails.status ?? '')) {
+    if (!['PAYMENT_NOT_INITIATED', 'AWAITING_AUTHORIZATION'].includes(transactionDetails.status ?? 'PAYMENT_NOT_INITIATED')) {
       clearInterval(statusPollInterval.value!);
       emit('statusChange', transactionDetails);
     }
@@ -245,7 +245,7 @@ const checkPaymentRequestStatus = async () => {
       { env: environment || EnvironmentTypeEnum.PRODUCTION }
     );
 
-    if (!['PAYMENT_NOT_INITIATED', 'AWAITING_AUTHORIZATION'].includes(paymentRequestStatusDetails.status ?? '')) {
+    if (!['PAYMENT_NOT_INITIATED', 'AWAITING_AUTHORIZATION'].includes(paymentRequestStatusDetails.status ?? 'PAYMENT_NOT_INITIATED')) {
       clearInterval(paymentRequestStatusPollInterval.value!);
       if (paymentIdempotencyId && paymentRequestStatusDetails.transactionDetails?.[0].paymentIdempotencyId) {
         paymentIdempotencyId.value = paymentRequestStatusDetails.transactionDetails?.[0].paymentIdempotencyId;
