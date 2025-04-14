@@ -1,6 +1,6 @@
 {
   "name": "@atoapayments/atoa-web-client-sdk",
-  "private": true,
+  "private": false,
   "version": "0.0.1",
   "type": "module",
   "description": "Official web client SDK for integrating Atoa Payments into web applications",
