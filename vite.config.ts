@@ -1,11 +1,9 @@
-import { defineConfig, loadEnv } from "vite";
+import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
 import path from "path";
 import { visualizer } from "rollup-plugin-visualizer";
 
-export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd());
-
+export default defineConfig(() => {
   return {
     plugins: [
       vue({
@@ -25,6 +23,7 @@ export default defineConfig(({ mode }) => {
         entry: path.resolve(__dirname, "src/index.ts"),
         name: "AtoaPayWebSdk",
       },
+      minify: true,
       rollupOptions: {
         external: [], // If you want to bundle Vue, don't list it as external
         output: {
