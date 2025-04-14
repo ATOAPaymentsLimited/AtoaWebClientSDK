@@ -23,13 +23,7 @@ export default defineConfig(({ mode }) => {
     build: {
       lib: {
         entry: path.resolve(__dirname, "src/index.ts"),
-        formats: ["es"],
         name: "AtoaPayWebSdk",
-        fileName: (format) => {
-          const envName = env.VITE_ENV || "dev";
-          const version = env.VITE_SDK_VERSION || "";
-          return `atoa-web-client-sdk-${envName}-v${version}.${format}.js`;
-        },
       },
       rollupOptions: {
         external: [], // If you want to bundle Vue, don't list it as external
