@@ -180,6 +180,10 @@ const handleGoToBankButtonClick = () => {
     },
     props.selectedBank.businessBank,
   );
+
+  if (!statusPollInterval.value) {
+    statusPollInterval.value = setInterval(checkPaymentStatus, 3000);
+  }
 }
 
 const handleGoToBankWebsiteClick = async () => {
