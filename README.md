@@ -100,7 +100,7 @@ sdk.showPaymentDialog();
 
 ### Customer Details for Previously Used Banks
 
-The SDK supports displaying banks the customer has previously paid with through the `customerId` parameter:
+The SDK supports displaying banks the customer has previously paid with through the `customerDetails` parameter:
 
 #### Using Customer Details
 
@@ -324,32 +324,6 @@ The SDK throws `AtoaPayWebSDKError` in the following cases:
 - When payment request ID is missing or empty
 - When there's an error displaying the payment dialog
 
-## Development
-
-For contributors working on the SDK:
-
-```bash
-# Install dependencies
-npm install
-
-# Development with hot reload
-npm run dev
-
-# Build for all environments
-npm run build
-
-# Build for specific environment
-npm run build:dev   # Development
-npm run build:uat   # UAT
-npm run build:prod  # Production
-
-# Run the example
-npm run serve-example
-
-# Run tests
-npm run test
-```
-
 ## License
 
-MIT © [Atoa Payments Limited](https://github.com/ATOAPaymentsLimited)
+MIT © [Atoa Payments Limited](https://paywithatoa.co.uk)
