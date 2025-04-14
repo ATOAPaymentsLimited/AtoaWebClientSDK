@@ -9,6 +9,7 @@ import type PaymentAuthResponse from "@/core/types/PaymentAuthResponse";
 import type CustomerDetails from "@/core/types/CustomerDetails";
 import { v4 as uuidv4 } from "uuid";
 import type TransactionDetails from "../types/TransactionDetails";
+import type PaymentRequestStatusDetails from "../types/PaymentRequestStatusDetails";
 
 export class PaymentsService {
   private http: ApiClient | never;
@@ -115,6 +116,22 @@ export class PaymentsService {
         url: api_urls.SECURE_PAYMENT_AUTH,
         method: API_METHODS.POST,
         json: dataToSend,
+      });
+    });
+  }
+
+  getPaymentStatusByRequestId(
+    paymentRequestId: string,
+    params: { env: EnvironmentTypeEnum }
+  ): Promise<PaymentRequestStatusDetails> {
+    return apiCall<PaymentRequestStatusDetails>(async () => {
+      const paramsLocal: { env: EnvironmentTypeEnum } = {
+        env: params.env.toLowerCase() as EnvironmentTypeEnum,
+      };
+      return this.http.makeRequest({
+        url: api_urls.GET_PAYMENT_STATUS_BY_REQUEST_ID.replace("$id", paymentRequestId),
+        method: API_METHODS.GET,
+        params: paramsLocal,
       });
     });
   }
