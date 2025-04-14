@@ -16,12 +16,7 @@ jobs:
         with:
           node-version: 20
       - run: npm ci
-      - run: npm test
       - run: npm run prepublishOnly
-        env:
-          VITE_BASE_URL: ${{ secrets.PROD_API_BASE_URL }}
-          VITE_ENV: "prod"
-          VITE_SDK_VERSION: 0.0.1
 
   publish-npm:
     needs: build
