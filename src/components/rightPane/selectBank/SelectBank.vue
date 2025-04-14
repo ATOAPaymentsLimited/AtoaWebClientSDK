@@ -54,6 +54,7 @@ import BankList from '@/components/rightPane/selectBank/BankList.vue';
 import type LastPaymentBankDetails from '@/core/types/LastPaymentBankDetails';
 import type PaymentDetails from '@/core/types/PaymentDetails';
 import { EnvironmentTypeEnum } from '@/core/types/Environment';
+import { DEFAULT_TRANSACTION_LIMIT } from '@/core/utils/constants';
 
 const emit = defineEmits<{
   (e: 'selectBank', bank: BankData): void,
@@ -138,7 +139,7 @@ async function fetchBanksList() {
 function handlePreselectedBank() {
   const bank = banks.value?.find((bank: BankData) => bank.id === lastPaymentBankDetails?.value?.institutionId);
 
-  if (bank && bank.enabled && bank.transactionAmountLimit >= (paymentDetails?.value.amount.amount ?? 0)) {
+  if (bank && bank.enabled && (bank.transactionAmountLimit ?? DEFAULT_TRANSACTION_LIMIT) >= (paymentDetails?.value.amount.amount ?? 0)) {
     handleBankSelect(bank);
     if (lastPaymentBankDetails?.value) {
       lastPaymentBankDetails.value = undefined;

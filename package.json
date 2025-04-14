@@ -1,7 +1,7 @@
 {
   "name": "@atoapayments/atoa-web-client-sdk",
   "private": false,
-  "version": "0.0.1",
+  "version": "0.0.2",
   "type": "module",
   "description": "Official web client SDK for integrating Atoa Payments into web applications",
   "repository": {
@@ -20,7 +20,7 @@
   ],
   "author": "Yash Tiwari",
   "license": "MIT",
-  "main": "dist/atoa-web-client-sdk.es.js",
+  "main": "dist/atoa-web-client-sdk.js",
   "files": [
     "dist"
   ],
