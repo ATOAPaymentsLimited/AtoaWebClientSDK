@@ -63,7 +63,8 @@
             to try again
           </p>
         </div>
-        <button class="go-to-bank-button" :style="{
+        <Shimmer v-if="isLoading" height="48px" />
+        <button v-else class="go-to-bank-button" :style="{
           background: paymentDetails?.merchantThemeDetails?.colorCode,
           color: getContrastColor(paymentDetails?.merchantThemeDetails?.colorCode)
         }" @click="handleGoToBankButtonClick">
@@ -133,7 +134,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'bankChange'): void;
-  (e: 'statusChange', transactionDetails: TransactionDetails): void;
+  (e: 'statusChange', transactionDetails?: TransactionDetails): void;
 }>();
 
 
@@ -150,6 +151,7 @@ const paymentAuthResponse = ref<PaymentAuthResponse | null>(null);
 const paymentIdempotencyId = inject<Ref<string | null>>('paymentIdempotencyId');
 const isLoading = ref(true);
 const statusPollInterval = ref<number | null>(null);
+const paymentRequestStatusPollInterval = ref<number | null>(null);
 const authUrlPollInterval = ref<number | null>(null);
 const fetchAuthorisationError = ref<Failure | null>(null);
 const paymentsService = new PaymentsService();
@@ -178,6 +180,10 @@ const handleGoToBankButtonClick = () => {
     },
     props.selectedBank.businessBank,
   );
+
+  if (!statusPollInterval.value) {
+    statusPollInterval.value = setInterval(checkPaymentStatus, 3000);
+  }
 }
 
 const handleGoToBankWebsiteClick = async () => {
@@ -193,6 +199,10 @@ const handleGoToBankWebsiteClick = async () => {
   atoaBankWebsiteUrlAnchorTag.target= '_blank';
   atoaBankWebsiteUrlAnchorTag.href= bankWebsiteUrl.value;
   atoaBankWebsiteUrlAnchorTag.click();
+
+  if (!statusPollInterval.value) {
+    statusPollInterval.value = setInterval(checkPaymentStatus, 3000);
+  }
 }
 
 const fetchAuthorisationData = async () => {
@@ -205,8 +215,9 @@ const fetchAuthorisationData = async () => {
       paymentIdempotencyId.value = paymentAuthResponse.value?.paymentIdempotencyId;
     }
     bankWebsiteUrl.value = authResponseData?.authorisationUrl;
-    if (!statusPollInterval.value) {
-      statusPollInterval.value = setInterval(checkPaymentStatus, 3000);
+
+    if(!isMobile() && !paymentRequestStatusPollInterval.value) {
+      paymentRequestStatusPollInterval.value = setInterval(checkPaymentRequestStatus, 3000);
     }
   } catch (error: unknown) {
     fetchAuthorisationError.value = (error as Failure);
@@ -222,9 +233,28 @@ const checkPaymentStatus = async () => {
       { env: environment || EnvironmentTypeEnum.PRODUCTION }
     );
 
-    if (!['PAYMENT_NOT_INITIATED', 'AWAITING_AUTHORIZATION'].includes(transactionDetails.status ?? '')) {
+    if (!['PAYMENT_NOT_INITIATED', 'AWAITING_AUTHORIZATION'].includes(transactionDetails.status ?? 'PAYMENT_NOT_INITIATED')) {
       clearInterval(statusPollInterval.value!);
       emit('statusChange', transactionDetails);
+    }
+  } catch (error) {
+    // fail silently, since next call can fetch the updated status
+  }
+};
+
+const checkPaymentRequestStatus = async () => {
+  try {
+    const paymentRequestStatusDetails = await paymentsService.getPaymentStatusByRequestId(
+      paymentRequestId ?? "",
+      { env: environment || EnvironmentTypeEnum.PRODUCTION }
+    );
+
+    if (!['PAYMENT_NOT_INITIATED', 'AWAITING_AUTHORIZATION'].includes(paymentRequestStatusDetails.status ?? 'PAYMENT_NOT_INITIATED')) {
+      clearInterval(paymentRequestStatusPollInterval.value!);
+      if (paymentIdempotencyId && paymentRequestStatusDetails.transactionDetails?.[0].paymentIdempotencyId) {
+        paymentIdempotencyId.value = paymentRequestStatusDetails.transactionDetails?.[0].paymentIdempotencyId;
+      }
+      emit('statusChange');
     }
   } catch (error) {
     // fail silently, since next call can fetch the updated status
@@ -258,6 +288,9 @@ onMounted(() => {
 onBeforeUnmount(() => {
   if (statusPollInterval.value) {
     clearInterval(statusPollInterval.value);
+  }
+  if (paymentRequestStatusPollInterval.value) {
+    clearInterval(paymentRequestStatusPollInterval.value);
   }
   if (authUrlPollInterval.value) {
     clearInterval(authUrlPollInterval.value);
