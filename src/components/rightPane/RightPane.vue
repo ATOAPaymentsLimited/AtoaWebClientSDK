@@ -1,0 +1,646 @@
+<template>
+  <div class="content-right">
+    <div class="sdk-right-pane" :class="{ error: paymentRequestFetchError }">
+      <div class="sdk-right-pane-header">
+        <div v-if="!paymentRequestFetchError" class="sdk-right-pane-header-left">
+          <div :class="showBackButton ? 'sdk-right-pane-header-actions' : null">
+            <button v-if="showBackButton" class="sdk-action-button" @click="goToPreviousView">
+              <img src="@/assets/images/icon_back.svg" alt="Back" />
+            </button>
+          </div>
+          <div v-if="!isFetchingInitialData" :key="currentView" class="sdk-right-pane-header-text">
+            <h2 v-if="currentView !== ViewType.PaymentStatusView">{{ viewTitleMap[currentView].title }}</h2>
+            <p v-else class="payment-details-header">{{ viewTitleMap[currentView].title }}</p>
+            <p v-if="viewTitleMap[currentView].showTimestamp" class="payment-timestamp">{{ formattedTimestamp }}</p>
+          </div>
+        </div>
+        <div class="sdk-action-row">
+          <button v-if="currentView === ViewType.SelectBankView && !paymentRequestFetchError && !isFetchingInitialData"
+            class="sdk-action-button" @click="handleHelpAction">
+            <img src="@/assets/images/icon_help.svg" alt="Help" />
+          </button>
+          <button class="sdk-action-button" :class="{ error: paymentRequestFetchError }" @click="handleClose">
+            <img src="@/assets/images/icon_close.svg" alt="Close" />
+          </button>
+        </div>
+      </div>
+
+      <div class="view-content">
+        <Transition mode="out-in" name="fade-slide" @enter="enter" @leave="leave">
+          <div v-if="isFetchingInitialData" class="shimmer-container">
+            <Shimmer width="100px" height="40px" :image-url="atoaPrimaryLogo" background-color="var(--base-white )" />
+          </div>
+          <div v-else-if="paymentRequestFetchError" class="error-container">
+            <img src="@/assets/images/icon_warning_black.svg" alt="Warning icon" class="warning-icon">
+            <p class="error-title">Error processing payment</p>
+            <p class="error-message">{{ paymentRequestFetchError.message }}</p>
+          </div>
+          <div v-else :key="currentView" class="view">
+            <div v-if="currentView === ViewType.ExplainerView" class="view-container-flex">
+              <ExplainerUI :is-loading="isFetchingInitialData" />
+            </div>
+
+            <div v-else-if="currentView === ViewType.SelectBankView" class="view-container-flex">
+              <SelectBank v-on:select-bank="handleOnBankSelect" :selected-bank-id="selectedBank?.id"
+                @show-overlay="handleShowOverlay" />
+            </div>
+
+            <div v-else-if="currentView === ViewType.PaymentOptionsView" class="view-container-flex">
+              <PaymentOptions v-if="selectedBank && paymentDetails" :selected-bank="selectedBank"
+                :payment-details="paymentDetails" @bank-change="goToPreviousView" @status-change="goToNextView" />
+            </div>
+
+            <div v-else-if="currentView === ViewType.PaymentInProgressView" class="view-container-flex">
+              <PaymentVerification v-if="selectedBank" :selected-bank="selectedBank" @success="goToNextView" />
+            </div>
+
+            <div v-else-if="currentView === ViewType.PaymentStatusView" class="view-container-flex">
+              <PaymentStatus @on-status-change="handleStatusChange"/>
+            </div>
+          </div>
+        </Transition>
+      </div>
+
+      <div v-if="showDisabledBankOverlay" :class="['bank-overlay', { mobile: isMobileWidth }]">
+        <div class="overlay-content">
+          <div class="overlay-icon">
+            <img src="@/assets/images/icon_warning.svg" alt="Warning" class="overlay-warning-image">
+            <p>Downtime</p>
+          </div>
+          <div class="overlay-message">
+            <p><strong>{{ disabledBank?.name }}</strong> bank is currently down for maintenance. Please select a
+              different bank and try
+              again.</p>
+          </div>
+          <button class="close-overlay-btn" @click.stop="closeOverlay">Select different bank</button>
+        </div>
+      </div>
+
+      <CancellationDialog :show="showCancellationDialog" @dismiss="showCancellationDialog = false"
+        @confirm="confirmClose" :is-pending="showPendingCancellationDialog" />
+
+      <div class="sdk-right-pane-footer" v-if="currentView === ViewType.ExplainerView">
+          <button class="continue-button" :style="{
+            background: paymentDetails?.merchantThemeDetails?.colorCode,
+            color: getContrastColor(paymentDetails?.merchantThemeDetails?.colorCode)
+            }" @click="goToNextView">
+            I understand, continue
+            <img src="@/assets/images/icon_arrow_right.svg" alt="Arrow right" class="arrow-right-icon">
+          </button>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { computed, inject, ref, toRefs, type Ref, type ComputedRef, provide } from 'vue'
+import ExplainerUI from '@/components/rightPane/explainer/ExplainerUI.vue'
+import SelectBank from '@/components/rightPane/selectBank/SelectBank.vue'
+import Shimmer from "@/components/sharedComponents/Shimmer.vue";
+import atoaPrimaryLogo from "@/assets/images/atoa_logo_primary.svg";
+import type BankData from '@/core/types/BankData'
+import PaymentOptions from '@/components/rightPane/paymentOptions/PaymentOptions.vue'
+import PaymentVerification from '@/components/rightPane/paymentVerification/PaymentVerification.vue'
+import PaymentStatus from '@/components/rightPane/paymentStatus/PaymentStatus.vue'
+import type PaymentDetails from '@/core/types/PaymentDetails'
+import CancellationDialog from '@/components/rightPane/CancellationDialog.vue'
+import { ViewType } from '@/core/types/ViewTypeEnum'
+import type { DialogCloseEventData, DialogCloseEventHandler, UserCancelPaymentEventHandler } from '@/core/types/SdkOptions'
+import type { Failure } from '@/core/utils/http-utils'
+import { getContrastColor } from '@/core/utils/colors';
+
+type ViewConfig = {
+  title: string;
+  showTimestamp?: boolean;
+};
+
+const props = defineProps({
+  isFetchingInitialData: {
+    type: Boolean,
+    required: false,
+  },
+});
+
+const viewTitleMap: Record<ViewType, ViewConfig> = {
+  [ViewType.ExplainerView]: {
+    title: 'How to pay with bank app?',
+  },
+  [ViewType.SelectBankView]: {
+    title: 'Select your bank to continue',
+  },
+  [ViewType.PaymentOptionsView]: {
+    title: 'Scan to pay',
+  },
+  [ViewType.PaymentInProgressView]: {
+    title: 'Payment in progress',
+  },
+  [ViewType.PaymentStatusView]: {
+    title: 'Payment details',
+    showTimestamp: true
+  }
+} as const;
+
+const { isFetchingInitialData } = toRefs(props);
+const paymentRequestId = inject<string>('paymentRequestId');
+const paymentDetails = inject<Ref<PaymentDetails>>('paymentRequestDetails');
+const cancelPaymentHandler = inject<UserCancelPaymentEventHandler>('cancelPaymentHandler');
+const closeHandler = inject<DialogCloseEventHandler>('closeHandler');
+const paymentRequestFetchError = inject<Ref<Failure | null>>('paymentRequestFetchError');
+const isMobileWidth = inject<ComputedRef<boolean>>('isMobileWidth');
+
+const views = ViewType.values();
+const currentView = ref<ViewType>(ViewType.SelectBankView)
+const selectedBank = ref<BankData | null>();
+const showDisabledBankOverlay = ref(false);
+const disabledBank = ref<BankData | null>(null);
+const paymentIdempotencyId = ref<string | null>();
+const showCancellationDialog = ref(false);
+let finalStatusData: DialogCloseEventData | undefined;
+let showPendingCancellationDialog = false;
+
+provide('paymentIdempotencyId', paymentIdempotencyId);
+
+const showBackButton = computed(
+  () => currentView.value === ViewType.PaymentOptionsView || currentView.value === ViewType.PaymentInProgressView
+);
+
+const isPending = computed(() => {
+  if (!finalStatusData) return true;
+  return finalStatusData?.status === 'PENDING';
+});
+
+const goToPreviousView = () => {
+  const currentIndex = views.indexOf(currentView.value);
+  if (currentIndex < views.length - 1) {
+    const previousView = views[currentIndex - 1];
+    setCurrentView(previousView);
+  }
+};
+
+const goToNextView = () => {
+  const currentIndex = views.indexOf(currentView.value);
+  if (currentIndex < views.length - 1) {
+    const nextView = views[currentIndex + 1];
+    if ([ViewType.PaymentInProgressView, ViewType.PaymentStatusView].includes(nextView)) {
+      showPendingCancellationDialog = true;
+    }
+    setCurrentView(nextView);
+  }
+};
+
+const setCurrentView = (view: ViewType) => {
+  currentView.value = view;
+};
+
+const enter = (el: Element, done: () => void) => {
+  const animation = (el as HTMLElement).animate(
+    [
+      { opacity: 1, transform: 'translateX(0)' }
+    ],
+    {
+      duration: 300,
+      easing: 'cubic-bezier(0.4, 0, 0.2, 1)'
+    }
+  )
+  animation.onfinish = done
+}
+
+const leave = (el: Element, done: () => void) => {
+  const animation = (el as HTMLElement).animate(
+    [
+      { opacity: 1, transform: 'translateX(0)' },
+      { opacity: 0, transform: 'translateX(-50px)' }
+    ],
+    {
+      duration: 300,
+      easing: 'cubic-bezier(0.4, 0, 0.2, 1)'
+    }
+  )
+  animation.onfinish = done
+}
+
+const handleOnBankSelect = (bank: BankData) => {
+  selectedBank.value = bank;
+  setCurrentView(ViewType.PaymentOptionsView);
+};
+
+const handleStatusChange = (data: DialogCloseEventData) => {
+  finalStatusData = data;
+};
+
+const handleClose = () => {
+  if (paymentRequestFetchError?.value || !isPending.value) {
+    closeHandler?.(finalStatusData);
+  }
+  if (currentView.value === ViewType.ExplainerView) {
+    goToNextView();
+  } else {
+    showCancellationDialog.value = true;
+  }
+};
+
+const handleHelpAction = () => {
+  setCurrentView(ViewType.ExplainerView);
+}
+
+const confirmClose = () => {
+  showCancellationDialog.value = false;
+  if (finalStatusData) {
+    if (closeHandler) {
+      closeHandler(finalStatusData);
+    }
+  } else if (cancelPaymentHandler) {
+    cancelPaymentHandler(paymentRequestId ?? '');
+  }
+};
+
+const timestamp = ref(new Date());
+
+const formattedTimestamp = computed(() => {
+  const date = timestamp.value;
+
+  const timeOptions: Intl.DateTimeFormatOptions = {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true
+  };
+  const time = date.toLocaleTimeString('en-GB', timeOptions);
+
+  const dateOptions: Intl.DateTimeFormatOptions = {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric'
+  };
+  const dateStr = date.toLocaleDateString('en-GB', dateOptions);
+
+  return `${time.toUpperCase()} on ${dateStr}`;
+});
+
+const handleShowOverlay = (bank: BankData) => {
+  disabledBank.value = bank;
+  showDisabledBankOverlay.value = true;
+};
+
+const closeOverlay = () => {
+  showDisabledBankOverlay.value = false;
+  disabledBank.value = null;
+};
+</script>
+
+<style scoped>
+.content-right {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.sdk-right-pane {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  padding: 16px 0 16px 32px;
+  overflow: hidden;
+  height: 100%;
+  position: relative;
+
+  &.error {
+    padding: 16px;
+  }
+}
+
+.sdk-right-pane-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.sdk-right-pane-header-left {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+.sdk-right-pane-header-actions {
+  display: flex;
+  align-items: center;
+  margin-right: 16px;
+}
+
+.sdk-action-button {
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: var(--grey-50);
+  transition: background-color 0.2s ease;
+
+  &.error {
+    position: absolute;
+    top: 0px;
+    right: 0px;
+  }
+}
+
+.sdk-action-button:hover {
+  background-color: var(--grey-200);
+}
+
+.sdk-right-pane-header-text h2 {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0;
+  color: var(--base-black);
+}
+
+.view-content {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  padding-right: 24px;
+}
+
+.view {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+/* Scrollbar styling */
+.view::-webkit-scrollbar {
+  width: 6px;
+  background: transparent;
+}
+
+.view::-webkit-scrollbar-track {
+  background: transparent;
+  margin: 24px 0;
+}
+
+.view::-webkit-scrollbar-thumb {
+  background-color: var(--grey-200);
+  border-radius: 3px;
+}
+
+.view::-webkit-scrollbar-thumb:hover {
+  background-color: var(--grey-300);
+}
+
+.view-container-flex {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  height: 100%;
+}
+
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+  transition: all 0.3s ease;
+}
+
+.fade-slide-enter-from {
+  transform: translateX(50px);
+}
+
+.fade-slide-leave-to {
+  transform: translateX(-50px);
+}
+
+.payment-details-header {
+  margin: 0px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--grey-500);
+  margin-bottom: 2px;
+}
+
+.payment-timestamp {
+  font-size: 14px;
+  font-weight: 700;
+  margin: 0;
+  color: var(--base-black);
+}
+
+.sdk-action-row {
+  display: flex;
+  gap: 16px;
+  margin-right: 16px;
+  z-index: 1;
+}
+
+.spacer {
+  display: flex;
+  flex: 1;
+}
+
+@media (max-width: 768px) {
+  .view {
+    padding-right: 0px;
+  }
+
+  .sdk-right-pane {
+    padding: 16px;
+  }
+
+  .sdk-right-pane .explainer-ui {
+    padding: 0px;
+  }
+
+  .sdk-right-pane-header-text p {
+    text-align: center;
+  }
+
+  .view-content {
+    padding: 0;
+  }
+
+  .sdk-action-row {
+    margin-right: 0px;
+  }
+
+  .sdk-right-pane-header-text {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    width: 100%;
+  }
+}
+
+.bank-overlay {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.bank-overlay.mobile {
+  position: fixed;
+}
+
+.overlay-content {
+  background-color: var(--base-white);
+  border-radius: 12px;
+  padding: 24px;
+  max-width: 400px;
+  margin: 0 48px;
+  text-align: center;
+}
+
+.overlay-icon {
+  background-color: var(--error-subtle);
+  border-radius: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+  padding: 8px 12px;
+  gap: 6px;
+}
+
+.overlay-icon p {
+  margin: 0px;
+  padding: 0px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--error-default);
+}
+
+.overlay-warning-image {
+  width: 24px;
+  height: 24px;
+}
+
+.overlay-message p {
+  margin: 0px;
+  font-size: 16px;
+  color: var(--base-black);
+  margin-bottom: 24px;
+}
+
+.close-overlay-btn {
+  width: 100%;
+  background-color: var(--grey-50);
+  color: var(--base-black);
+  border: none;
+  border-radius: 10px;
+  padding: 14px 0px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.close-overlay-btn:hover {
+  background-color: var(--grey-100);
+}
+
+.error-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  text-align: center;
+}
+
+.warning-icon {
+  width: 42px;
+  height: 42px;
+  margin-bottom: 12px;
+}
+
+.error-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--base-black);
+  margin: 12px 0px;
+}
+
+.error-message {
+  font-size: 14px;
+  color: var(--grey-600);
+  max-width: 350px;
+  margin: 0px;
+}
+
+.shimmer-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (max-width: 1024px) {
+  .shimmer-container {
+    width: 100%;
+    height: 60vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+.sdk-right-pane-footer {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  width: 100%;
+  flex-shrink: 0;
+  z-index: 99;
+  box-shadow: 0 -10px 10px -10px rgba(0, 0, 0, 0.2);
+}
+
+.payment-details-footer {
+  font-weight: 700;
+  color: var(--base-black);
+}
+
+.continue-button {
+  width: 95%;
+  background: #1A1A1A;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 16px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 16px;
+  font-family: inherit;
+}
+
+.arrow-right-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+}
+</style>
