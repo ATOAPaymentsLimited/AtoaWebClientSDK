@@ -91,7 +91,5 @@ lerna-debug.log
 .DS_Store
 Thumbs.db
 
-package-lock.json
-
 # Roolup visualizer stats file
 stats.html

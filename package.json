@@ -1,7 +1,7 @@
 {
   "name": "@atoapayments/atoa-web-client-sdk",
-  "private": true,
-  "version": "0.0.1",
+  "private": false,
+  "version": "0.0.3",
   "type": "module",
   "description": "Official web client SDK for integrating Atoa Payments into web applications",
   "repository": {
@@ -20,7 +20,7 @@
   ],
   "author": "Yash Tiwari",
   "license": "MIT",
-  "main": "dist/atoa-web-client-sdk.es.js",
+  "main": "dist/atoa-web-client-sdk.min.js",
   "files": [
     "dist"
   ],
@@ -38,7 +38,9 @@
     "watch:prod": "vue-tsc -b && vite build --mode production --watch",
     "clean": "rm -rf dist",
     "gzipper": "gzipper compress ./dist --include cjs,cts,js,ts,d.ts",
-    "prepublishOnly": "npm run clean && npm run build:prod && npm run gzipper",
+    "minify": "terser dist/atoa-web-client-sdk.js -o dist/atoa-web-client-sdk.min.js --compress --mangle && terser dist/atoa-web-client-sdk.umd.cjs -o dist/atoa-web-client-sdk.umd.min.cjs --compress --mangle",
+    "cleanup": "rm -f dist/atoa-web-client-sdk.js dist/atoa-web-client-sdk.umd.cjs",
+    "prepublishOnly": "npm run clean && npm run build:prod && npm run minify && npm run cleanup && npm run gzipper",
     "test": "jest --config jest.config.cjs"
   },
   "devDependencies": {
@@ -53,6 +55,7 @@
     "jest-environment-jsdom": "^29.7.0",
     "qrcode": "^1.5.4",
     "rollup-plugin-visualizer": "^5.14.0",
+    "terser": "^5.39.0",
     "ts-jest": "^29.2.6",
     "typescript": "~5.7.2",
     "uuid": "^8.3.2",
