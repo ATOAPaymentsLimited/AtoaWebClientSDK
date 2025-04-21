@@ -70,7 +70,7 @@ const triggerSuccessView = () => {
   setTimeout(() => {
     showSuccessAnimation.value = false;
     aligntoYAxisStart.value = true;
-    startRedirectionCountdown(10);
+    closeDialog();
   }, 3000);
 };
 
@@ -142,19 +142,23 @@ const startRedirectionCountdown = (initialValue: number) => {
     countdown.value--;
     if (countdown.value <= 0) {
       clearInterval(redirectionTimer);
-      if (closeHandler) {
-        closeHandler({
-          paymentIdempotencyId: transactionDetails.value?.paymentIdempotencyId ?? '',
-          status: transactionDetails.value?.status ?? '',
-          paymentRequestId: paymentRequestId ?? '',
-          callbackParams: transactionDetails.value?.redirectUrlParams,
-          atoaSignature: transactionDetails.value?.signature,
-          atoaSignatureHash: transactionDetails.value?.signatureHash,
-        });
-      }
+      closeDialog();
     }
   }, 1000);
 };
+
+const closeDialog = () => {
+  if (closeHandler) {
+    closeHandler({
+      paymentIdempotencyId: transactionDetails.value?.paymentIdempotencyId ?? '',
+      status: transactionDetails.value?.status ?? '',
+      paymentRequestId: paymentRequestId ?? '',
+      callbackParams: transactionDetails.value?.redirectUrlParams,
+      atoaSignature: transactionDetails.value?.signature,
+      atoaSignatureHash: transactionDetails.value?.signatureHash,
+    });
+  }
+}
 
 onMounted(async () => {
   pollPaymentStatus();

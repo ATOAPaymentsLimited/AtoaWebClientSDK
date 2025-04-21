@@ -5,6 +5,8 @@ The official web client SDK for integrating Atoa Payments into web applications.
 [![npm version](https://img.shields.io/npm/v/@atoapayments/atoa-web-client-sdk.svg)](https://www.npmjs.com/package/@atoapayments/atoa-web-client-sdk)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
+**Required:** Before using this SDK, you must follow the [Getting Started Guide](https://docs.atoa.me/introduction) to set up your Atoa developer account and obtain API credentials.
+
 ## Overview
 
 The Atoa Web Client SDK allows merchants to easily integrate Atoa Payments into their web applications. The SDK provides a simple interface for showing a payment dialog that handles the entire payment flow securely and efficiently.
