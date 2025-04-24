@@ -38,7 +38,7 @@ const customerDetails = inject<CustomerDetails>('customerDetails');
 const errorHandler = inject<ErrorEventHandler>('errorHandler');
 
 const width = ref(window.innerWidth);
-const isMobileWidth = computed(() => width.value < 1023);
+const isMobileWidth = computed(() => width.value < 1024);
 
 provide("isMobileWidth", isMobileWidth);
 provide('banksList', banksList);
@@ -128,7 +128,7 @@ onBeforeUnmount(() => {
   width: 60%;
   height: 70%;
   max-width: 1200px;
-  max-height: 85vh;
+  max-height: 80vh;
   overflow: auto;
   display: flex;
   flex-direction: column;
@@ -149,7 +149,6 @@ onBeforeUnmount(() => {
 @media (min-width: 1024px) and (max-width: 1366px) {
   .payment-dialog {
     width: 70%;
-    max-height: 85vh;
   }
 
   .left-pane,
@@ -163,7 +162,6 @@ onBeforeUnmount(() => {
 @media (min-width: 1024px) and (max-width: 1366px) and (orientation: portrait) {
   .payment-dialog {
     width: 70%;
-    max-height: 85vh;
     height: auto;
   }
 }
@@ -172,7 +170,6 @@ onBeforeUnmount(() => {
 @media (min-width: 768px) and (max-width: 1023px) {
   .payment-dialog {
     width: 70%;
-    max-height: 85vh;
     height: auto;
   }
 
@@ -191,7 +188,6 @@ onBeforeUnmount(() => {
 @media (min-width: 768px) and (max-width: 1023px) and (orientation: portrait) {
   .payment-dialog {
     width: 100%;
-    max-height: 85vh;
     height: auto;
   }
 
@@ -213,7 +209,6 @@ onBeforeUnmount(() => {
   .payment-dialog {
     width: 100%;
     height: auto;
-    max-height: 90vh;
     border-radius: 16px 16px 0 0;
   }
 
@@ -235,14 +230,12 @@ onBeforeUnmount(() => {
   .payment-dialog {
     width: 100%;
     height: auto;
-    max-height: 90vh;
   }
 }
 
 @media (max-height: 668px) and (orientation: landscape) {
   .payment-dialog {
     width: 100%;
-    max-height: 90vh;
     height: auto;
   }
 

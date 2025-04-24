@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Atoa SDK Server Integration Example</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      background-color: #f8f9fa;
+      padding-top: 2rem;
+    }
+    
+    .product-card {
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      transition: transform 0.3s ease;
+    }
+    
+    .product-card:hover {
+      transform: translateY(-5px);
+    }
+    
+    .product-img {
+      height: 200px;
+      object-fit: cover;
+    }
+    
+    .price {
+      font-size: 1.5rem;
+      font-weight: 600;
+    }
+    
+    .checkout-container {
+      background-color: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      padding: 1.5rem;
+    }
+    
+    .payment-btn {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.5rem;
+      border-radius: 5px;
+      border: none;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    
+    .atoa-payment-btn {
+      background-color: #00a69c;
+      color: white;
+    }
+    
+    .atoa-payment-btn:hover {
+      background-color: #008c82;
+    }
+    
+    .spinner-border {
+      display: none;
+      width: 1rem; 
+      height: 1rem;
+    }
+    
+    .btn.loading .spinner-border {
+      display: inline-block;
+    }
+    
+    .btn.loading .btn-text {
+      display: none;
+    }
+
+    #payment-status {
+      display: none;
+      padding: 1rem;
+      border-radius: 5px;
+      margin-top: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="row mb-5">
+      <div class="col-12 text-center">
+        <h1 class="display-4 mb-4">Atoa Web SDK - Server Integration</h1>
+        <p class="lead">This example demonstrates integrating the Atoa Web SDK with a server-side implementation.</p>
+      </div>
+    </div>
+    
+    <div class="row">
+      <!-- Product Information -->
+      <div class="col-lg-6 mb-4">
+        <div class="product-card">
+          <img src="https://images.unsplash.com/photo-1542291026-7eec264c27ff" alt="Product" class="img-fluid product-img w-100">
+          <div class="card-body p-4">
+            <h2 class="card-title">Premium Sneakers</h2>
+            <p class="card-text text-muted mb-3">Lightweight, durable running shoes with superior cushioning and breathable materials. Perfect for any activity.</p>
+            <div class="price mb-3">£49.99</div>
+            <ul class="list-unstyled mb-3">
+              <li><i class="bi bi-check-circle-fill text-success me-2"></i> Fast Shipping</li>
+              <li><i class="bi bi-check-circle-fill text-success me-2"></i> 30-Day Returns</li>
+              <li><i class="bi bi-check-circle-fill text-success me-2"></i> Secure Payment</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Checkout Section -->
+      <div class="col-lg-6">
+        <div class="checkout-container">
+          <h3 class="mb-4">Checkout</h3>
+          <form id="checkout-form">
+            <div class="mb-3">
+              <label for="name" class="form-label">Full Name</label>
+              <input type="text" class="form-control" id="name" required>
+            </div>
+            <div class="mb-3">
+              <label for="email" class="form-label">Email</label>
+              <input type="email" class="form-control" id="email" required>
+            </div>
+            <div class="mb-3">
+              <label for="address" class="form-label">Shipping Address</label>
+              <textarea class="form-control" id="address" rows="2" required></textarea>
+            </div>
+            
+            <div class="border-top pt-3 mb-3">
+              <div class="d-flex justify-content-between mb-2">
+                <span>Product Price:</span>
+                <span>£49.99</span>
+              </div>
+              <div class="d-flex justify-content-between mb-2">
+                <span>Shipping:</span>
+                <span>£4.99</span>
+              </div>
+              <div class="d-flex justify-content-between fw-bold">
+                <span>Total:</span>
+                <span>£54.98</span>
+              </div>
+            </div>
+            
+            <div class="d-grid gap-2 mt-4">
+              <button id="atoa-payment-btn" type="submit" class="btn atoa-payment-btn">
+                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                <span class="btn-text">Pay with Atoa</span>
+              </button>
+            </div>
+          </form>
+          
+          <div id="payment-status" class="mt-3"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script type="module">
+    import { AtoaWebSdk } from '../dist/atoa-web-client-sdk.js';
+    
+    document.addEventListener('DOMContentLoaded', () => {
+      const checkoutForm = document.getElementById('checkout-form');
+      const atoaPaymentBtn = document.getElementById('atoa-payment-btn');
+      const paymentStatus = document.getElementById('payment-status');
+      
+      checkoutForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        
+        // Show loading state
+        atoaPaymentBtn.classList.add('loading');
+        atoaPaymentBtn.disabled = true;
+        
+        try {
+          // Get form data
+          const name = document.getElementById('name').value;
+          const email = document.getElementById('email').value;
+          const address = document.getElementById('address').value;
+          
+          // Create payment request by calling the server API
+          // which then creates a payment request with Atoa's API
+          const paymentRequest = await createPaymentRequest({
+            amount: 1.00,
+            currency: 'GBP',
+            customerDetails: {
+              name,
+              email,
+              address
+            }
+          });
+          
+          // Initialize the Atoa Web SDK with the payment request details
+          const sdk = new AtoaWebSdk({
+            environment: "SANDBOX", // Use SANDBOX or PRODUCTION
+            paymentRequestId: paymentRequest.paymentRequestId, // From your server
+            customerDetails: {
+              email: email
+            },
+            onError: (error) => {
+              console.error("Payment error:", error);
+              showPaymentStatus('error', error?.message || "An error occurred during payment");
+              atoaPaymentBtn.classList.remove('loading');
+              atoaPaymentBtn.disabled = false;
+            },
+            onPaymentStatusChange: (data) => {
+              console.log("Payment status changed:", data);
+              if (data && data.status === "SUCCESS") {
+                // Handle successful payment status update
+              }
+            },
+            onClose: (data) => {
+              console.log("Payment dialog closed:", data);
+              if (data && data.status === "COMPLETED") {
+                showPaymentStatus('success', "Payment completed successfully! Your order has been placed.");
+                // Verify the payment with the server
+              } else if (data && data.status === "FAILED") {
+                showPaymentStatus('error', "Payment failed. Please try again.");
+              }
+              
+              atoaPaymentBtn.classList.remove('loading');
+              atoaPaymentBtn.disabled = false;
+            },
+            onUserCancel: () => {
+              console.log("User cancelled payment");
+              showPaymentStatus('warning', "Payment was cancelled");
+              atoaPaymentBtn.classList.remove('loading');
+              atoaPaymentBtn.disabled = false;
+            }
+          });
+          
+          // Show the payment dialog
+          sdk.showPaymentDialog();
+        } catch (error) {
+          console.error("Failed to initialize payment:", error);
+          showPaymentStatus('error', error?.message || "Failed to initialize payment");
+          atoaPaymentBtn.classList.remove('loading');
+          atoaPaymentBtn.disabled = false;
+        }
+      });
+      
+      // Function to display payment status messages
+      function showPaymentStatus(type, message) {
+        paymentStatus.textContent = message;
+        paymentStatus.style.display = 'block';
+        
+        // Remove existing classes
+        paymentStatus.classList.remove('alert-success', 'alert-danger', 'alert-warning');
+        
+        // Add appropriate class based on status type
+        paymentStatus.classList.add('alert');
+        if (type === 'success') {
+          paymentStatus.classList.add('alert-success');
+        } else if (type === 'error') {
+          paymentStatus.classList.add('alert-danger');
+        } else if (type === 'warning') {
+          paymentStatus.classList.add('alert-warning');
+        }
+        
+        // Auto-hide after 10 seconds for non-success messages
+        if (type !== 'success') {
+          setTimeout(() => {
+            paymentStatus.style.display = 'none';
+          }, 10000);
+        }
+      }
+      
+      // In production, replace with an actual API call to your server
+      async function createPaymentRequest(data) {
+        try {
+          const response = await fetch('/api/create-payment', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+          });
+          
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to create payment request');
+          }
+          
+          return await response.json();
+        } catch (error) {
+          console.error('Payment request creation failed:', error);
+          throw error;
+        }
+      }
+      
+      // Verify payment with server
+      function verifyPayment(paymentData) {
+        // API call to your backend for payment verification
+      }
+    });
+  </script>
+</body>
+</html> 
