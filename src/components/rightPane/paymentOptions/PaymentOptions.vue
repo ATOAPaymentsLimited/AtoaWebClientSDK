@@ -72,10 +72,7 @@
           <ArrowIconRight :color="paymentDetails?.merchantThemeDetails?.foregroundColor" />
         </button>
         <div class="atoa-terms">
-          By continuing you accept Yapily's <a href="https://www.yapily.com/legal/end-user-terms" class="footer-link" target="_blank">Terms</a>
-           and <a href="https://www.yapily.com/legal/privacy-policy" class="footer-link" target="_blank">Privacy Policy</a> and
-           Atoa's <a href="https://paywithatoa.co.uk/terms/" class="footer-link" target="_blank">Terms of service</a>.
-           Atoa is powered by Yapily Connect Ltd.
+          By continuing, you trust this merchant and accept <a href="https://paywithatoa.co.uk/terms/" class="footer-link" target="_blank">Atoa’s terms</a>.
         </div>
       </div>
       <div v-else class="desktop-footer-section">
