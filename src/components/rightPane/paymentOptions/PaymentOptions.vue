@@ -66,10 +66,10 @@
         <Shimmer v-if="isLoading" height="48px" />
         <button v-else class="go-to-bank-button" :style="{
           background: paymentDetails?.merchantThemeDetails?.colorCode,
-          color: getContrastColor(paymentDetails?.merchantThemeDetails?.colorCode)
+          color: paymentDetails?.merchantThemeDetails?.foregroundColor
         }" @click="handleGoToBankButtonClick">
           Go to {{ selectedBank.name }}
-          <img src="@/assets/images/icon_arrow_right.svg" alt="Arrow right" class="arrow-right-icon">
+          <ArrowIconRight :color="paymentDetails?.merchantThemeDetails?.foregroundColor" />
         </button>
         <div class="atoa-terms">
           By continuing, you trust this merchant and accept <a href="https://paywithatoa.co.uk/terms/" class="footer-link" target="_blank">Atoa’s terms</a>.
@@ -121,8 +121,8 @@ import VueQrcode from '@chenfengyuan/vue-qrcode';
 import { goToBank, isMobile } from '@/core/utils/common';
 import Shimmer from "@/components/sharedComponents/Shimmer.vue";
 import type { Failure } from "@/core/utils/http-utils";
-import { getContrastColor } from '@/core/utils/colors';
 import type TransactionDetails from "@/core/types/TransactionDetails";
+import ArrowIconRight from '@/components/sharedComponents/ArrowIconRight.vue';
 
 const props = defineProps<{
   selectedBank: BankData;
@@ -298,7 +298,7 @@ onBeforeUnmount(() => {
 <style scoped>
 .payment-options {
   height: 100%;
-  padding: 24px 0;
+  padding-top: 24px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -593,7 +593,7 @@ onBeforeUnmount(() => {
 .go-to-bank-button {
   width: 100%;
   background: var(--base-black);
-  color: white;
+  color: var(--base-white);
   border: none;
   border-radius: 8px;
   padding: 16px;

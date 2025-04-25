@@ -82,10 +82,10 @@
       <div class="sdk-right-pane-footer" v-if="currentView === ViewType.ExplainerView">
           <button class="continue-button" :style="{
             background: paymentDetails?.merchantThemeDetails?.colorCode,
-            color: getContrastColor(paymentDetails?.merchantThemeDetails?.colorCode)
+            color: paymentDetails?.merchantThemeDetails?.foregroundColor,
             }" @click="goToNextView">
             I understand, continue
-            <img src="@/assets/images/icon_arrow_right.svg" alt="Arrow right" class="arrow-right-icon">
+            <ArrowIconRight :color="paymentDetails?.merchantThemeDetails?.foregroundColor" />
           </button>
       </div>
     </div>
@@ -107,7 +107,7 @@ import CancellationDialog from '@/components/rightPane/CancellationDialog.vue'
 import { ViewType } from '@/core/types/ViewTypeEnum'
 import type { DialogCloseEventData, DialogCloseEventHandler, UserCancelPaymentEventHandler } from '@/core/types/SdkOptions'
 import type { Failure } from '@/core/utils/http-utils'
-import { getContrastColor } from '@/core/utils/colors';
+import ArrowIconRight from '@/components/sharedComponents/ArrowIconRight.vue';
 
 type ViewConfig = {
   title: string;
@@ -157,6 +157,7 @@ const paymentIdempotencyId = ref<string | null>();
 const showCancellationDialog = ref(false);
 let finalStatusData: DialogCloseEventData | undefined;
 let showPendingCancellationDialog = false;
+const pageAnimationDirection = ref<'forward' | 'backward'>('forward');
 
 provide('paymentIdempotencyId', paymentIdempotencyId);
 
@@ -172,6 +173,7 @@ const isPending = computed(() => {
 const goToPreviousView = () => {
   const currentIndex = views.indexOf(currentView.value);
   if (currentIndex < views.length - 1) {
+    pageAnimationDirection.value = 'backward';
     const previousView = views[currentIndex - 1];
     setCurrentView(previousView);
   }
@@ -180,6 +182,7 @@ const goToPreviousView = () => {
 const goToNextView = () => {
   const currentIndex = views.indexOf(currentView.value);
   if (currentIndex < views.length - 1) {
+    pageAnimationDirection.value = 'forward';
     const nextView = views[currentIndex + 1];
     if ([ViewType.PaymentInProgressView, ViewType.PaymentStatusView].includes(nextView)) {
       showPendingCancellationDialog = true;
@@ -193,8 +196,10 @@ const setCurrentView = (view: ViewType) => {
 };
 
 const enter = (el: Element, done: () => void) => {
+  const translateX = pageAnimationDirection.value === 'forward' ? '50px' : '-50px';
   const animation = (el as HTMLElement).animate(
     [
+      { opacity: 0, transform: `translateX(${translateX})` },
       { opacity: 1, transform: 'translateX(0)' }
     ],
     {
@@ -206,10 +211,11 @@ const enter = (el: Element, done: () => void) => {
 }
 
 const leave = (el: Element, done: () => void) => {
+  const translateX = pageAnimationDirection.value === 'forward' ? '-50px' : '50px';
   const animation = (el as HTMLElement).animate(
     [
       { opacity: 1, transform: 'translateX(0)' },
-      { opacity: 0, transform: 'translateX(-50px)' }
+      { opacity: 0, transform: `translateX(${translateX})` }
     ],
     {
       duration: 300,
@@ -221,6 +227,7 @@ const leave = (el: Element, done: () => void) => {
 
 const handleOnBankSelect = (bank: BankData) => {
   selectedBank.value = bank;
+  pageAnimationDirection.value = 'forward';
   setCurrentView(ViewType.PaymentOptionsView);
 };
 
@@ -380,27 +387,14 @@ const closeOverlay = () => {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding-right: 8px;
+  padding-right: 16px;
+  /* Hide default scrollbar */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
 }
 
-/* Scrollbar styling */
 .view::-webkit-scrollbar {
-  width: 6px;
-  background: transparent;
-}
-
-.view::-webkit-scrollbar-track {
-  background: transparent;
-  margin: 24px 0;
-}
-
-.view::-webkit-scrollbar-thumb {
-  background-color: var(--grey-200);
-  border-radius: 3px;
-}
-
-.view::-webkit-scrollbar-thumb:hover {
-  background-color: var(--grey-300);
+  display: none; /* Chrome, Safari and Opera */
 }
 
 .view-container-flex {
@@ -408,6 +402,8 @@ const closeOverlay = () => {
   flex-direction: column;
   flex: 1;
   height: 100%;
+  max-height: 100%;
+  overflow: hidden; /* Prevent children from overflowing */
 }
 
 .fade-slide-enter-active,
@@ -416,11 +412,11 @@ const closeOverlay = () => {
 }
 
 .fade-slide-enter-from {
-  transform: translateX(50px);
+  opacity: 0;
 }
 
 .fade-slide-leave-to {
-  transform: translateX(-50px);
+  opacity: 0;
 }
 
 .payment-details-header {
@@ -450,39 +446,6 @@ const closeOverlay = () => {
   flex: 1;
 }
 
-@media (max-width: 768px) {
-  .view {
-    padding-right: 0px;
-  }
-
-  .sdk-right-pane {
-    padding: 16px;
-  }
-
-  .sdk-right-pane .explainer-ui {
-    padding: 0px;
-  }
-
-  .sdk-right-pane-header-text p {
-    text-align: center;
-  }
-
-  .view-content {
-    padding: 0;
-  }
-
-  .sdk-action-row {
-    margin-right: 0px;
-  }
-
-  .sdk-right-pane-header-text {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    width: 100%;
-  }
-}
-
 .bank-overlay {
   position: absolute;
   inset: 0;
@@ -509,12 +472,13 @@ const closeOverlay = () => {
 .overlay-icon {
   background-color: var(--error-subtle);
   border-radius: 100px;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 20px;
+  margin: 0 auto 20px;
   padding: 8px 12px;
   gap: 6px;
+  width: fit-content;
 }
 
 .overlay-icon p {
@@ -593,21 +557,11 @@ const closeOverlay = () => {
   justify-content: center;
 }
 
-@media (max-width: 1024px) {
-  .shimmer-container {
-    width: 100%;
-    height: 60vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-}
-
 .sdk-right-pane-footer {
   display: flex;
   justify-content: flex-start;
   align-items: center;
-  width: 100%;
+  width: 95%;
   flex-shrink: 0;
   z-index: 99;
   box-shadow: 0 -10px 10px -10px rgba(0, 0, 0, 0.2);
@@ -619,7 +573,7 @@ const closeOverlay = () => {
 }
 
 .continue-button {
-  width: 95%;
+  width: 100%;
   background: #1A1A1A;
   color: white;
   border: none;
@@ -642,5 +596,50 @@ const closeOverlay = () => {
   justify-content: center;
   width: 16px;
   height: 16px;
+}
+
+@media (max-width: 1024px) {
+  .view {
+    padding-right: 0px;
+  }
+
+  .sdk-right-pane {
+    padding: 16px;
+  }
+
+  .sdk-right-pane .explainer-ui {
+    padding: 0px;
+  }
+
+  .sdk-right-pane-header-text p {
+    text-align: center;
+  }
+
+  .view-content {
+    padding: 0;
+  }
+
+  .sdk-action-row {
+    margin-right: 0px;
+  }
+
+  .sdk-right-pane-header-text {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    width: 100%;
+  }
+
+  .shimmer-container {
+    width: 100%;
+    height: 60vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .sdk-right-pane-footer {
+    width: 100%;
+  }
 }
 </style>

@@ -86,7 +86,7 @@ const handleBankSelect = (bank: BankData) => {
 
 .bank-logo {
   position: relative;
-  padding: 0px 21px;
+  padding: 0px 18px;
   height: 60px;
   min-width: 34px;
   display: flex;

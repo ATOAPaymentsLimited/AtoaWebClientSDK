@@ -9,11 +9,11 @@
     </div>
     <div class="footer-help-section">
       <div class="footer-help-text" :style="{
-        color: getContrastColor(paymentDetails?.merchantThemeDetails?.colorCode)
+        color: paymentDetails?.merchantThemeDetails?.foregroundColor
       }"> By continuing, you trust this merchant and accept <a href="https://paywithatoa.co.uk/terms/" class="footer-link" target="_blank">Atoa’s terms</a>.
       </div>
       <div class="footer-help-text" :style="{
-        color: getContrastColor(paymentDetails?.merchantThemeDetails?.colorCode)
+        color: paymentDetails?.merchantThemeDetails?.foregroundColor
       }">Issues with your payment? <a href="https://help.paywithatoa.co.uk/hc/atoa-help-center/en"
           class="footer-link-underline" target="_blank">Get
           help now.</a>
@@ -27,7 +27,6 @@ import RoundedChip from "@/components/sharedComponents/RoundedChip.vue";
 import atoaLogo from "@/assets/images/atoa_logo.svg";
 import atoaShieldIcon from "@/assets/images/icon_check_shield.svg";
 import atoaLockIcon from "@/assets/images/icon_lock.svg";
-import { getContrastColor } from '@/core/utils/colors';
 import type PaymentDetails from "@/core/types/PaymentDetails";
 import { inject, type Ref } from "vue";
 
