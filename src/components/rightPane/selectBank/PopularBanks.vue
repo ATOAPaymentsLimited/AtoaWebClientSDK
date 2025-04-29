@@ -72,8 +72,9 @@ const handleBankSelect = (bank: BankData) => {
 .popular-banks-grid {
   margin-top: 20px;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 20px 16px;
+  justify-content: space-between;
 }
 
 .popular-bank-item {
@@ -82,11 +83,12 @@ const handleBankSelect = (bank: BankData) => {
   align-items: center;
   cursor: pointer;
   transition: all 0.2s ease;
+  width: 100%;
 }
 
 .bank-logo {
   position: relative;
-  padding: 0px 20px;
+  padding: 0px;
   height: 60px;
   min-width: 34px;
   display: flex;
@@ -96,6 +98,8 @@ const handleBankSelect = (bank: BankData) => {
   background: var(--base-white);
   border: 1px solid var(--grey-200);
   border-radius: 12px;
+  box-sizing: border-box;
+  width: 100%;
 }
 
 .warning-icon {
