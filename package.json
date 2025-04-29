@@ -14,6 +14,7 @@
   },
   "homepage": "https://github.com/ATOAPaymentsLimited/AtoaWebClientSDK#readme",
   "keywords": [
+    "atoa",
     "atoa pay",
     "client",
     "sdk"
@@ -21,15 +22,16 @@
   "author": "Yash Tiwari",
   "license": "MIT",
   "main": "dist/atoa-web-client-sdk.min.js",
+  "types": "dist/types/index.d.ts",
   "files": [
     "dist"
   ],
   "scripts": {
     "dev": "vite",
-    "build": "npm run build:dev && npm run build:uat && npm run build:prod",
     "build:dev": "vue-tsc -b && vite build --mode development",
     "build:uat": "vue-tsc -b && vite build --mode uat",
     "build:prod": "vue-tsc -b && vite build --mode production",
+    "build:types": "tsc -p tsconfig.types.json",
     "preview": "vite preview",
     "serve-example": "vite example",
     "watch": "npm run watch:dev",
@@ -40,7 +42,7 @@
     "gzipper": "gzipper compress ./dist --include cjs,cts,js,ts,d.ts",
     "minify": "terser dist/atoa-web-client-sdk.js -o dist/atoa-web-client-sdk.min.js --compress --mangle && terser dist/atoa-web-client-sdk.umd.cjs -o dist/atoa-web-client-sdk.umd.min.cjs --compress --mangle",
     "cleanup": "rm -f dist/atoa-web-client-sdk.js dist/atoa-web-client-sdk.umd.cjs",
-    "prepublishOnly": "npm run clean && npm run build:prod && npm run minify && npm run cleanup && npm run gzipper",
+    "prepublishOnly": "npm run clean && npm run build:prod && npm run build:types && cp -r src/types dist/ && npm run minify && npm run cleanup && npm run gzipper",
     "test": "jest --config jest.config.cjs"
   },
   "devDependencies": {

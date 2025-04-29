@@ -107,6 +107,7 @@ const filteredEligibleBanks = computed(() => {
   flex-direction: column;
   overflow: visible;
   padding-right: 0;
+  height: 100%;
 }
 
 /* Remove all scrollbar styling */

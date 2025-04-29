@@ -1,0 +1,25 @@
+{
+  "extends": "@vue/tsconfig/tsconfig.dom.json",
+  "compilerOptions": {
+    "declaration": true,
+    "declarationDir": "./dist/types",
+    "emitDeclarationOnly": true,
+    "outDir": "./dist",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    },
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "target": "esnext",
+    "skipLibCheck": true,
+    "types": ["vite/client"]
+  },
+  "include": [
+    "src/**/*.ts", 
+    "src/**/*.vue", 
+    "types/vite-shim.d.ts", 
+    "types/vue-shim.d.ts"
+  ],
+  "exclude": ["node_modules", "dist", "example", "src/vite-env.d.ts"]
+} 

@@ -1,4 +1,4 @@
-import { EnvironmentTypeEnum } from "@/core/types/Environment.ts";
+import { EnvironmentTypeEnum } from "@/core/types/Environment";
 import { API_METHODS, ApiClient } from "@/core/utils/http-client";
 import { apiCall, api_urls } from "@/core/utils/http-utils";
 import type PaymentDetails from "@/core/types/PaymentDetails";

@@ -3,8 +3,8 @@ import type MerchantThemeDetails from "./MerchantThemeDetails";
 import type QrDetails from "./QrDetails";
 import type StoreDetails from "./StoreDetails";
 import type { PaymentTypeEnum, SourceTypeEnum } from "./common";
-import type { EnvironmentTypeEnum } from "./Environment.ts";
-import type LastPaymentBankDetails from "./LastPaymentBankDetails.ts";
+import type { EnvironmentTypeEnum } from "./Environment";
+import type LastPaymentBankDetails from "./LastPaymentBankDetails";
 
 export interface PaymentDetailsError {
   paymentDetailHasError: boolean;

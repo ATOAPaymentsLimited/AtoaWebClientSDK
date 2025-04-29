@@ -53,7 +53,7 @@ const handleClick = () => {
 .bank-card {
   display: flex;
   align-items: center;
-  padding: 16px;
+  padding: 16px 0px;
   background: white;
   cursor: pointer;
   transition: all 0.2s ease;

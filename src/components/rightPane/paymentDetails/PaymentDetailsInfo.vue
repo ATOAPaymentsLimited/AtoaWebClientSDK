@@ -58,6 +58,7 @@ const copyToClipboard = async (text?: string) => {
         {
           componentName: 'PaymentDetailsInfo',
           errorName: (error as Failure).name,
+          errorMessage: (error as Failure).message,
         },
       ));
     }
