@@ -1,7 +1,7 @@
 <template>
   <div class="select-bank">
     <div class="search-container">
-      <div class="search-input" :class="{'border-active': isSearching}">
+      <div class="search-input" :class="{'border-active': isSearching, 'mobile': isMobileWidth}">
         <img :src="searchIcon" alt="Search" class="search-icon">
         <div class="input-container">
           <input 
@@ -20,7 +20,7 @@
       </div>
     </div>
 
-    <div class="content" v-if="isLoading">
+    <div class="content" :class="{'mobile': isMobileWidth}" v-if="isLoading">
       <div class="loading-state">
         <img src="https://atoa-gifs.s3.eu-west-2.amazonaws.com/animated_grid.gif" alt="Loading"
           class="loading-animation">
@@ -28,7 +28,7 @@
       </div>
     </div>
 
-    <div class="content" v-else-if="banksListFetchError">
+    <div class="content" :class="{'mobile': isMobileWidth}" v-else-if="banksListFetchError">
       <div class="error-state">
         <p class="error-title">Oops! Something went wrong</p>
         <p class="error-message">An unknown error occurred. We track these errors automatically, Please try again.</p>
@@ -36,7 +36,7 @@
       </div>
     </div>
 
-    <div class="content" v-else>
+    <div class="content" :class="{'mobile': isMobileWidth}" v-else>
       <transition name="fade-slide">
         <div v-if="!isSearching">
           <BankTabs v-model="selectedType" />
@@ -54,7 +54,7 @@
 </template>
 
 <script setup lang="ts">
-import { inject, onMounted, ref, watch, type Ref } from 'vue';
+import { inject, onMounted, ref, watch, type ComputedRef, type Ref } from 'vue';
 import searchIcon from '@/assets/images/icon_search.svg';
 import { PaymentsService } from '@/core/services/PaymentsService';
 import type BankData from '@/core/types/BankData';
@@ -89,6 +89,7 @@ const banksListFetchError = ref(false);
 const lastPaymentBankDetails = inject<Ref<LastPaymentBankDetails | undefined>>('lastPaymentBankDetails');
 const paymentDetails = inject<Ref<PaymentDetails>>('paymentRequestDetails');
 const environment = inject<EnvironmentTypeEnum>('environment');
+const isMobileWidth = inject<ComputedRef<boolean>>('isMobileWidth');
 const paymentsService = new PaymentsService();
 
 if (lastPaymentBankDetails) {
@@ -170,7 +171,7 @@ function handlePreselectedBank() {
   height: 100%;
   display: flex;
   flex-direction: column;
-  overflow: hidden; /* Keep content within parent boundaries */
+  overflow: hidden;
   padding-bottom: 16px;
 }
 
@@ -214,6 +215,11 @@ function handlePreselectedBank() {
   align-items: center;
   gap: 12px;
   position: relative;
+  margin-right: 36px;
+
+  &.mobile {
+    margin-right: 0px;
+  }
 }
 
 .search-input.border-active {
@@ -286,9 +292,15 @@ function handlePreselectedBank() {
   display: flex;
   flex-direction: column;
   overflow-y: auto; /* Use auto for natural scrollbar behavior */
-  padding-right: 16px;
+  padding-right: 24px;
   padding-bottom: 24px;
+  margin-right: 8px;
   position: relative;
+
+  &.mobile {
+    padding-right: 0px;
+    margin-right: 0px;
+  }
 }
 
 /* Scrollbar styling */

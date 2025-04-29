@@ -25,7 +25,7 @@
         </div>
       </div>
 
-      <div class="view-content">
+      <div class="view-content" :class="{ 'padding-right': currentView === ViewType.SelectBankView }">
         <Transition mode="out-in" name="fade-slide" @enter="enter" @leave="leave">
           <div v-if="isFetchingInitialData" class="shimmer-container">
             <Shimmer width="100px" height="40px" :image-url="atoaPrimaryLogo" background-color="var(--base-white )" />
@@ -35,7 +35,7 @@
             <p class="error-title">Error processing payment</p>
             <p class="error-message">{{ paymentRequestFetchError.message }}</p>
           </div>
-          <div v-else :key="currentView" class="view">
+          <div v-else :key="currentView" class="view" :class="{ 'selectBankView': currentView === ViewType.SelectBankView }">
             <div v-if="currentView === ViewType.ExplainerView" class="view-container-flex">
               <ExplainerUI :is-loading="isFetchingInitialData" />
             </div>
@@ -372,12 +372,16 @@ const closeOverlay = () => {
 
 .view-content {
   position: relative;
-  overflow: hidden;
+  overflow: visible;
   display: flex;
   flex-direction: column;
   flex: 1;
   min-height: 0;
   padding-right: 24px;
+
+  &.padding-right {
+    padding-right: 0;
+  }
 }
 
 .view {
@@ -388,13 +392,35 @@ const closeOverlay = () => {
   min-height: 0;
   overflow-y: auto;
   padding-right: 16px;
-  /* Hide default scrollbar */
+}
+
+/* Default hidden scrollbar for SelectBankView */
+.view.selectBankView {
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none; /* IE and Edge */
 }
 
-.view::-webkit-scrollbar {
+.view.selectBankView::-webkit-scrollbar {
   display: none; /* Chrome, Safari and Opera */
+}
+
+.view:not(.selectBankView)::-webkit-scrollbar {
+  display: block;
+  width: 4px;
+}
+
+.view:not(.selectBankView)::-webkit-scrollbar-thumb {
+  background-color: var(--grey-300);
+  border-radius: 48px;
+}
+
+.view:not(.selectBankView)::-webkit-scrollbar-track {
+  background-color: var(--grey-200);
+}
+
+/* Show scrollbar in Firefox when not in SelectBankView */
+.view:not(.selectBankView) {
+  scrollbar-width: thin;
 }
 
 .view-container-flex {
@@ -403,7 +429,7 @@ const closeOverlay = () => {
   flex: 1;
   height: 100%;
   max-height: 100%;
-  overflow: hidden; /* Prevent children from overflowing */
+  overflow: visible;
 }
 
 .fade-slide-enter-active,

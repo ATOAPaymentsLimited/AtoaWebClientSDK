@@ -75,6 +75,7 @@ async function fetchPaymentRequestDetails() {
         {
           componentName: 'PaymentDialog',
           errorName: (error as Failure).name,
+          errorMessage: (error as Failure).message,
         },
       ));
       paymentRequestFetchError.value = error as Failure;

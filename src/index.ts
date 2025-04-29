@@ -1,11 +1,25 @@
 import { defineCustomElement } from "vue";
-import { EnvironmentTypeEnum } from "@/core/types/Environment.ts";
-import type { SdkOptions } from "@/core/types/SdkOptions";
-import { AtoaPayWebSDKError } from "@/core/types/Error";
-import AtoaPayDialog from "@/dialog.vue";
+import { EnvironmentTypeEnum } from "./core/types/Environment";
+import type { SdkOptions } from "./core/types/SdkOptions";
+import { AtoaPayWebSDKError } from "./core/types/Error";
+import AtoaPayDialog from "./dialog.vue";
 
 const AtoaPaySdkDialogElement = defineCustomElement(AtoaPayDialog);
 customElements.define("atoa-pay-sdk-dialog", AtoaPaySdkDialogElement);
+
+// Export types
+export type { 
+  SdkOptions,
+  ErrorEventHandler,
+  PaymentStatusEventHandler,
+  UserCancelPaymentEventHandler,
+  DialogCloseEventData,
+  DialogCloseEventHandler
+} from "./core/types/SdkOptions";
+
+export type { default as CustomerDetails } from "./core/types/CustomerDetails";
+export { EnvironmentTypeEnum } from "./core/types/Environment";
+export { AtoaPayWebSDKError } from "./core/types/Error";
 
 export class AtoaWebSdk {
   private dialogElement: HTMLElement | null;
