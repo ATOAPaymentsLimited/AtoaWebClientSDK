@@ -63,16 +63,16 @@
             to try again
           </p>
         </div>
-        <Shimmer v-if="isLoading" height="48px" />
+        <Shimmer v-if="isLoading || maxAttemptsReached" height="48px" />
         <button v-else class="go-to-bank-button" :style="{
           background: paymentDetails?.merchantThemeDetails?.colorCode,
-          color: getContrastColor(paymentDetails?.merchantThemeDetails?.colorCode)
+          color: paymentDetails?.merchantThemeDetails?.foregroundColor
         }" @click="handleGoToBankButtonClick">
           Go to {{ selectedBank.name }}
-          <img src="@/assets/images/icon_arrow_right.svg" alt="Arrow right" class="arrow-right-icon">
+          <ArrowIconRight :color="paymentDetails?.merchantThemeDetails?.foregroundColor" />
         </button>
         <div class="atoa-terms">
-          By continuing, you trust this merchant and accept <a href="https://paywithatoa.co.uk/terms/" class="footer-link" target="_blank">Atoa’s terms</a>.
+          By continuing, you trust this merchant and accept <a href="https://paywithatoa.co.uk/terms/" class="footer-link" target="_blank">Atoa's terms</a>.
         </div>
       </div>
       <div v-else class="desktop-footer-section">
@@ -85,11 +85,16 @@
                 <div class="loading-spinner"></div>
               </div>
               <div v-else class="qrcode">
-                <vue-qrcode :value="paymentUrl" tag="svg" :options="{
-                  errorCorrectionLevel: 'Q',
-                  width: 206,
-                  margin: 0,
-                }"></vue-qrcode>
+                <div :class="{ 'blur-qr': maxAttemptsReached }" class="qrcode-svg-container">
+                  <vue-qrcode :value="paymentUrl" tag="svg" :options="{
+                    errorCorrectionLevel: 'Q',
+                    width: 206,
+                    margin: 0,
+                  }"></vue-qrcode>
+                </div>
+                <button v-if="maxAttemptsReached" class="refresh-qr-button" @click="restartAuthUrlsTimer">
+                  Refresh QR
+                </button>
                 <img class="qrcode-mask-image" src="@/assets/images/atoa_logo_primary.svg" alt="Atoa Logo" />
               </div>
             </transition>
@@ -121,8 +126,8 @@ import VueQrcode from '@chenfengyuan/vue-qrcode';
 import { goToBank, isMobile } from '@/core/utils/common';
 import Shimmer from "@/components/sharedComponents/Shimmer.vue";
 import type { Failure } from "@/core/utils/http-utils";
-import { getContrastColor } from '@/core/utils/colors';
 import type TransactionDetails from "@/core/types/TransactionDetails";
+import ArrowIconRight from '@/components/sharedComponents/ArrowIconRight.vue';
 
 const props = defineProps<{
   selectedBank: BankData;
@@ -152,7 +157,7 @@ const paymentRequestStatusPollInterval = ref<number | null>(null);
 const authUrlPollInterval = ref<number | null>(null);
 const fetchAuthorisationError = ref<Failure | null>(null);
 const paymentsService = new PaymentsService();
-const maxAttempts = 5;
+const maxAttempts = 6;
 let attemptCount = 0;
 const maxAttemptsReached = ref(false);
 
@@ -212,10 +217,6 @@ const fetchAuthorisationData = async () => {
       paymentIdempotencyId.value = paymentAuthResponse.value?.paymentIdempotencyId;
     }
     bankWebsiteUrl.value = authResponseData?.authorisationUrl;
-
-    if(!isMobile() && !paymentRequestStatusPollInterval.value) {
-      paymentRequestStatusPollInterval.value = setInterval(checkPaymentRequestStatus, 3000);
-    }
   } catch (error: unknown) {
     fetchAuthorisationError.value = (error as Failure);
   } finally {
@@ -247,7 +248,7 @@ const checkPaymentRequestStatus = async () => {
     );
 
     if (!['PAYMENT_NOT_INITIATED', 'AWAITING_AUTHORIZATION'].includes(paymentRequestStatusDetails.status ?? 'PAYMENT_NOT_INITIATED')) {
-      clearInterval(paymentRequestStatusPollInterval.value!);
+      if (paymentRequestStatusPollInterval.value) clearInterval(paymentRequestStatusPollInterval.value);
       if (paymentIdempotencyId && paymentRequestStatusDetails.transactionDetails?.[0].paymentIdempotencyId) {
         paymentIdempotencyId.value = paymentRequestStatusDetails.transactionDetails?.[0].paymentIdempotencyId;
       }
@@ -262,12 +263,12 @@ function restartAuthUrlsTimer() {
   attemptCount = 0;
   maxAttemptsReached.value = false;
   refetchAuthUrls();
-  authUrlPollInterval.value = setInterval(refetchAuthUrls, 300000);
+  restartPaymentPolling();
+  authUrlPollInterval.value = setInterval(refetchAuthUrls, 280000); // 4 minutes and 40 seconds
 }
 
 const refetchAuthUrls = async () => {
   attemptCount++;
-  fetchAuthorisationData();
 
   if (attemptCount >= maxAttempts) {
     maxAttemptsReached.value = true;
@@ -275,6 +276,29 @@ const refetchAuthUrls = async () => {
       clearInterval(authUrlPollInterval.value);
       authUrlPollInterval.value = null;
     }
+    resetPaymentPolling();
+  } else {
+    fetchAuthorisationData();
+  }
+}
+
+const restartPaymentPolling = () => {
+  if(!statusPollInterval.value) {
+    statusPollInterval.value = setInterval(checkPaymentStatus, 3000);
+  }
+  if(!isMobile() && !paymentRequestStatusPollInterval.value) {
+    paymentRequestStatusPollInterval.value = setInterval(checkPaymentRequestStatus, 3000);
+  }
+}
+
+const resetPaymentPolling = () => {
+  if(statusPollInterval.value) {
+    clearInterval(statusPollInterval.value);
+    statusPollInterval.value = null;
+  }
+  if(paymentRequestStatusPollInterval.value) {
+    clearInterval(paymentRequestStatusPollInterval.value);
+    paymentRequestStatusPollInterval.value = null;
   }
 }
 
@@ -298,7 +322,7 @@ onBeforeUnmount(() => {
 <style scoped>
 .payment-options {
   height: 100%;
-  padding: 24px 0;
+  padding-top: 24px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -436,6 +460,10 @@ onBeforeUnmount(() => {
   position: relative;
 }
 
+.qrcode-svg-container {
+  position: relative;
+}
+
 .qrcode-mask-image {
   background-color: var(--base-white);
   border-radius: 6px;
@@ -445,6 +473,11 @@ onBeforeUnmount(() => {
   top: 41%;
   left: 41%;
   margin: auto;
+  z-index: 5;
+}
+
+.blur-qr {
+  filter: blur(3px);
 }
 
 .qr-code :deep(svg) {
@@ -478,7 +511,7 @@ onBeforeUnmount(() => {
 }
 
 .divider {
-  width: 100%;
+  width: 60%;
   text-align: center;
   border-bottom: 1px dashed var(--grey-200);
   line-height: 0.1em;
@@ -593,7 +626,7 @@ onBeforeUnmount(() => {
 .go-to-bank-button {
   width: 100%;
   background: var(--base-black);
-  color: white;
+  color: var(--base-white);
   border: none;
   border-radius: 8px;
   padding: 16px;
@@ -747,5 +780,23 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.refresh-qr-button {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--base-black);
+  color: var(--base-white);
+  border: none;
+  border-radius: 8px;
+  padding: 16px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  box-sizing: border-box;
+  z-index: 10;
 }
 </style>

@@ -16,7 +16,7 @@
 
     <div v-show="!showSuccessAnimation" class="next-content slide-up">
       <PaymentDetailsUI :transaction-details="transactionDetails" :show-pending-transaction-error="showPendingTransactionError"/>
-      <div class="redirect-message">
+      <div v-if="transactionDetails" class="redirect-message">
         You will be redirected in <strong>{{ formattedCountdown }}</strong>
       </div>
     </div>
@@ -71,7 +71,7 @@ const triggerSuccessView = () => {
     showSuccessAnimation.value = false;
     aligntoYAxisStart.value = true;
     closeDialog();
-  }, 3000);
+  }, 2000);
 };
 
 const pollPaymentStatus = async () => {
@@ -230,7 +230,7 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 8px;
   opacity: 0;
-  /* Start hidden */
+  height: 100%;
 }
 
 @keyframes fadeOutUp {

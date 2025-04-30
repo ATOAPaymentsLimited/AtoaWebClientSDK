@@ -1,16 +1,26 @@
 <template>
   <div class="select-bank">
     <div class="search-container">
-      <div class="search-input">
+      <div class="search-input" :class="{'border-active': isSearching, 'mobile': isMobileWidth}">
         <img :src="searchIcon" alt="Search" class="search-icon">
-        <input type="text" v-model="searchQuery" :placeholder="`Search your ${selectedType} bank`"
-          @click="handleSearchBarClick">
+        <div class="input-container">
+          <input 
+            type="text" 
+            v-model="searchQuery" 
+            placeholder="Search your personal bank"
+            :class="{'has-placeholder': !isSearching}"
+            @click="handleSearchBarClick">
+          <div v-if="!isSearching" class="placeholder-overlay">
+            <span class="static-text">Search your</span>
+            <AnimatedBankType class="animated-text"/>
+          </div>
+        </div>
         <img v-if="isSearching" src="@/assets/images/icon_close.svg" alt="Clear" class="clear-icon"
           @click="handleSearchBarCloseClick">
       </div>
     </div>
 
-    <div class="content" v-if="isLoading">
+    <div class="content" :class="{'mobile': isMobileWidth}" v-if="isLoading">
       <div class="loading-state">
         <img src="https://atoa-gifs.s3.eu-west-2.amazonaws.com/animated_grid.gif" alt="Loading"
           class="loading-animation">
@@ -18,7 +28,7 @@
       </div>
     </div>
 
-    <div class="content" v-else-if="banksListFetchError">
+    <div class="content" :class="{'mobile': isMobileWidth}" v-else-if="banksListFetchError">
       <div class="error-state">
         <p class="error-title">Oops! Something went wrong</p>
         <p class="error-message">An unknown error occurred. We track these errors automatically, Please try again.</p>
@@ -26,7 +36,7 @@
       </div>
     </div>
 
-    <div class="content" v-else>
+    <div class="content" :class="{'mobile': isMobileWidth}" v-else>
       <transition name="fade-slide">
         <div v-if="!isSearching">
           <BankTabs v-model="selectedType" />
@@ -44,13 +54,14 @@
 </template>
 
 <script setup lang="ts">
-import { inject, onMounted, ref, watch, type Ref } from 'vue';
+import { inject, onMounted, ref, watch, type ComputedRef, type Ref } from 'vue';
 import searchIcon from '@/assets/images/icon_search.svg';
 import { PaymentsService } from '@/core/services/PaymentsService';
 import type BankData from '@/core/types/BankData';
 import BankTabs from '@/components/rightPane/selectBank/BankTabs.vue';
 import PopularBanks from '@/components/rightPane/selectBank/PopularBanks.vue';
 import BankList from '@/components/rightPane/selectBank/BankList.vue';
+import AnimatedBankType from '@/components/rightPane/selectBank/AnimatedBankType.vue';
 import type LastPaymentBankDetails from '@/core/types/LastPaymentBankDetails';
 import type PaymentDetails from '@/core/types/PaymentDetails';
 import { EnvironmentTypeEnum } from '@/core/types/Environment';
@@ -78,6 +89,7 @@ const banksListFetchError = ref(false);
 const lastPaymentBankDetails = inject<Ref<LastPaymentBankDetails | undefined>>('lastPaymentBankDetails');
 const paymentDetails = inject<Ref<PaymentDetails>>('paymentRequestDetails');
 const environment = inject<EnvironmentTypeEnum>('environment');
+const isMobileWidth = inject<ComputedRef<boolean>>('isMobileWidth');
 const paymentsService = new PaymentsService();
 
 if (lastPaymentBankDetails) {
@@ -156,10 +168,11 @@ function handlePreselectedBank() {
 
 .select-bank {
   padding: 24px 0;
-  padding-right: 24px;
   height: 100%;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+  padding-bottom: 16px;
 }
 
 .header {
@@ -201,6 +214,16 @@ function handlePreselectedBank() {
   display: flex;
   align-items: center;
   gap: 12px;
+  position: relative;
+  margin-right: 36px;
+
+  &.mobile {
+    margin-right: 0px;
+  }
+}
+
+.search-input.border-active {
+  border: 1px solid var(--grey-300);
 }
 
 .search-icon {
@@ -220,24 +243,84 @@ function handlePreselectedBank() {
   opacity: 1;
 }
 
-.search-input input {
+.input-container {
+  position: relative;
+  width: 100%;
+}
+
+.input-container input {
   border: none;
   background: none;
   width: 100%;
+  height: 100%;
   font-size: 13px;
   color: var(--base-black);
   outline: none;
   font-family: inherit;
 }
 
-.search-input input::placeholder {
+.input-container input::placeholder {
+  color: transparent;
+}
+
+.placeholder-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+}
+
+.static-text {
   color: var(--grey-400);
+  font-size: 13px;
+}
+
+.animated-text {
+  margin-left: 4px;
+}
+
+.search-input.border-active .placeholder-overlay {
+  display: none;
 }
 
 .content {
   flex: 1;
   display: flex;
   flex-direction: column;
+  overflow-y: auto; /* Use auto for natural scrollbar behavior */
+  padding-right: 24px;
+  padding-bottom: 24px;
+  margin-right: 8px;
+  position: relative;
+
+  &.mobile {
+    padding-right: 0px;
+    margin-right: 0px;
+  }
+}
+
+/* Scrollbar styling */
+.content::-webkit-scrollbar {
+  width: 4px;
+  background: transparent;
+  border-radius: 48px;
+}
+
+.content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.content::-webkit-scrollbar-thumb {
+  background-color: var(--grey-200);
+  border-radius: 3px;
+}
+
+.content::-webkit-scrollbar-thumb:hover {
+  background-color: var(--grey-300);
 }
 
 .loading-state {
@@ -268,7 +351,8 @@ function handlePreselectedBank() {
 .banks-container {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  width: 100%;
+  flex-grow: 1;
 }
 
 /* Remove all scrollbar styling */

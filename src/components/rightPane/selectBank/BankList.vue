@@ -86,6 +86,7 @@ const filteredEligibleBanks = computed(() => {
   height: 100%;
   display: flex;
   flex-direction: column;
+  overflow: visible; /* Allow content to flow without scrollbar */
 }
 
 .transition-container {
@@ -96,14 +97,22 @@ const filteredEligibleBanks = computed(() => {
   font-size: 12px;
   font-weight: 700;
   color: var(--grey-500);
-  margin-bottom: 16px;
+  margin: 12px 0;
   letter-spacing: 1.2px;
+  flex-shrink: 0;
 }
 
 .bank-list {
-  height: 100%;
   display: flex;
   flex-direction: column;
+  overflow: visible;
+  padding-right: 0;
+  height: 100%;
+}
+
+/* Remove all scrollbar styling */
+.bank-list::-webkit-scrollbar {
+  display: none;
 }
 
 .no-results-container {
@@ -124,6 +133,11 @@ const filteredEligibleBanks = computed(() => {
 .no-results-message {
   font-size: 14px;
   color: var(--grey-500);
+  text-align: center;
+  max-width: 100%;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  padding: 0 16px;
 }
 
 .ineligible-banks-section {

@@ -7,20 +7,17 @@
       <span class="merchant-business-name-prefix">To </span>
       <span class="merchant-business-name-value">{{ merchantBusinessName }}</span>
     </div>
-    <div class="store-location-name" v-if="storeLocationName">
+    <div class="store-location-name" v-if="storeLocationName && storeLocationName !== 'DEFAULT'">
       <span class="store-location-name-value">{{ storeLocationName }}</span>
     </div>
     <div class="payment-amount">
-      <span class="payment-amount-bold">£{{ splitAmount[0] }}.</span>
-      <span class="payment-amount-normal">{{ splitAmount[1].toString().padStart(2, '0') }}</span>
+      <span class="payment-amount-bold">£{{ props.amount.toFixed(2) }}</span>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import storeImagePlaceholder from "@/assets/images/store_image_placeholder.svg";
-import { splitDouble } from "@/core/utils/common";
-import { computed } from 'vue';
 
 const props = defineProps({
   storeUrl: {
@@ -39,10 +36,6 @@ const props = defineProps({
     type: String,
     required: false,
   }
-});
-
-const splitAmount = computed(() => {
-  return splitDouble(props.amount);
 });
 </script>
 
@@ -76,11 +69,6 @@ const splitAmount = computed(() => {
 
 .payment-amount .payment-amount-bold {
   font-weight: 800;
-  font-size: 20px;
-}
-
-.payment-amount .payment-amount-normal {
-  font-weight: 400;
   font-size: 20px;
 }
 

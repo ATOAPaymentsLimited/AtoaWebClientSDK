@@ -22,17 +22,7 @@
     </div>
   </div>
 
-  <div v-else-if="transactionDetails?.status === 'EXPIRED'" class="status-section expired">
-    <div class="status-icon">
-      <img src="@/assets/images/icon_expired.svg" alt="Payment Expired" />
-    </div>
-    <div class="status-info">
-      <div class="status-title">Expired</div>
-      <div class="status-message">The payment you're trying to make has expired.</div>
-    </div>
-  </div>
-
-  <div v-else class="status-section processing">
+  <div v-else-if="transactionDetails?.status === 'PENDING'" class="status-section processing">
     <div class="status-icon">
       <img src="https://atoa-gifs.s3.eu-west-2.amazonaws.com/icon_processing.gif" alt="Payment Pending"
         class="processing-icon" />
@@ -43,6 +33,11 @@
         v-html="showPendingTransactionError && transactionDetails?.pendingTrasactionError ? statusText : 'Payment processing is taking longer than usual but your money is safe with your bank. Please wait for this transaction to complete before making another payment.'">
       </div>
     </div>
+  </div>
+
+  <div v-else class="status-section full-height">
+    <img src="https://atoa-gifs.s3.eu-west-2.amazonaws.com/default_loader.gif" alt="Loading"
+      class="default-loader" />
   </div>
 
   <PaymentDetailsInfo v-if="transactionDetails" :transaction-details="transactionDetails" />
@@ -100,6 +95,17 @@ const callBankLink = (phoneNumber: string | number) => {
   margin: 16px 0px;
   margin-top: 28px;
   box-sizing: border-box;
+  align-items: center;
+  justify-content: center;
+}
+
+.full-height {
+  height: 100%;
+  flex-grow: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
 }
 
 .completed {
@@ -155,6 +161,13 @@ const callBankLink = (phoneNumber: string | number) => {
   object-fit: contain;
   box-sizing: border-box;
   padding: 4px;
+}
+
+.default-loader {
+  width: 60px;
+  height: 60px;
+  display: block;
+  margin: 0 auto;
 }
 
 .status-message :deep(.bank-phone-number-link) {

@@ -80,11 +80,6 @@ export const formatDate = (dateString: string) => {
   return formattedTime;
 };
 
-export const splitDouble = (amount: number): number[] => {
-  const [whole, decimal = "00"] = amount.toFixed(2).split(".");
-  return [parseInt(whole), parseInt(decimal)];
-};
-
 export async function goToBank(
   bankRedirectionUrls: BankRedirectionUrls,
   isBusinessBank = false
