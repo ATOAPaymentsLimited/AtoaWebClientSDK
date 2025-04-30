@@ -1,0 +1,1107 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Atoa Garage</title>
+    <meta
+      http-equiv="Cache-Control"
+      content="no-cache, no-store, must-revalidate"
+    />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <link
+      rel="icon"
+      type="image/png"
+      href="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQxil6JJl3zMgz9hH7LDiitwlrBqft5BKT5oA&s"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&display=swap"
+    />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
+          Roboto, sans-serif;
+      }
+
+      @keyframes gradientBG {
+        0% {
+          background-position: 0% 50%;
+        }
+        50% {
+          background-position: 100% 50%;
+        }
+        100% {
+          background-position: 0% 50%;
+        }
+      }
+
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes pulse {
+        0% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.05);
+        }
+        100% {
+          transform: scale(1);
+        }
+      }
+
+      body {
+        background: linear-gradient(-45deg, #1a1a1a, #2d2d2d, #1f1f1f, #2a2a2a);
+        background-size: 400% 400%;
+        animation: gradientBG 15s ease infinite;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        color: #ffffff;
+        overflow-x: hidden;
+        width: 100%;
+      }
+
+      .nav-bar {
+        padding: 1.5rem 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: fixed;
+        top: 0;
+        z-index: 100;
+        width: 100%;
+        transition: all 0.3s ease;
+      }
+
+      .logo {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #ffffff;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        transition: transform 0.3s ease;
+      }
+
+      .logo:hover {
+        transform: scale(1.05);
+      }
+
+      .logo i {
+        margin-right: 0.5rem;
+        background: linear-gradient(45deg, #00bcd4, #2196f3);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+
+      .nav-links {
+        display: flex;
+        gap: 2rem;
+      }
+
+      .nav-links a {
+        text-decoration: none;
+        color: #ffffff;
+        font-weight: 500;
+        text-transform: uppercase;
+        font-size: 0.9rem;
+        letter-spacing: 0.5px;
+      }
+
+      .nav-icons {
+        display: flex;
+        gap: 1.5rem;
+      }
+
+      .nav-icons a {
+        color: #ffffff;
+        text-decoration: none;
+        font-size: 1.2rem;
+        transition: all 0.3s ease;
+      }
+
+      .nav-icons a:hover {
+        color: #00bcd4;
+        transform: scale(1.1);
+      }
+
+      .hero {
+        height: 50vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        padding: 0 2rem;
+        background: linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)),
+          url("https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1920&q=80");
+        background-size: cover;
+        background-position: center;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .hero::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(
+          45deg,
+          rgba(0, 188, 212, 0.1),
+          rgba(33, 150, 243, 0.1)
+        );
+        backdrop-filter: blur(5px);
+        z-index: 1;
+      }
+
+      .hero::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(
+          135deg,
+          rgba(255, 255, 255, 0.1),
+          rgba(255, 255, 255, 0)
+        );
+        backdrop-filter: blur(10px);
+        z-index: 1;
+      }
+
+      .hero h1 {
+        font-size: 3rem;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+        line-height: 1.2;
+        position: relative;
+        z-index: 2;
+        animation: fadeInUp 1s ease-out;
+        background: linear-gradient(45deg, #ffffff, #00bcd4);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+
+      .shop-now-btn {
+        background: linear-gradient(45deg, #00bcd4, #2196f3);
+        color: #ffffff;
+        padding: 1rem 2.5rem;
+        border-radius: 50px;
+        text-decoration: none;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+        position: relative;
+        z-index: 2;
+        animation: fadeInUp 1s ease-out 0.3s backwards;
+      }
+
+      .shop-now-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 188, 212, 0.4);
+      }
+
+      .products-section {
+        min-height: 50vh;
+        display: flex;
+        flex-direction: column;
+        padding: 2rem;
+        background: rgba(0, 0, 0, 0.3);
+        backdrop-filter: blur(10px);
+      }
+
+      .products-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 2rem;
+        max-width: 1400px;
+        margin: 0 auto;
+        width: 100%;
+        animation: fadeInUp 1s ease-out;
+      }
+
+      .product-card {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        padding: 1rem;
+        backdrop-filter: blur(10px);
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        overflow: hidden;
+      }
+
+      .product-card:hover {
+        transform: translateY(-5px);
+        border-color: #00bcd4;
+        box-shadow: 0 10px 20px rgba(0, 188, 212, 0.2);
+      }
+
+      .product-image {
+        width: 100%;
+        height: 200px;
+        object-fit: cover;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+        transition: all 0.3s ease;
+      }
+
+      .product-card:hover .product-image {
+        transform: scale(1.05);
+      }
+
+      .product-info {
+        position: relative;
+        z-index: 1;
+      }
+
+      .product-actions {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 1rem;
+      }
+
+      .rent-button {
+        background: linear-gradient(45deg, #ff9500, #ff3b30);
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        flex: 1;
+      }
+
+      .rent-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 3px 10px rgba(255, 149, 0, 0.4);
+      }
+
+      .buy-button {
+        background: linear-gradient(45deg, #00bcd4, #2196f3);
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        flex: 1;
+      }
+
+      .buy-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 3px 10px rgba(0, 188, 212, 0.4);
+      }
+
+      .product-title {
+        font-size: 1.1rem;
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+        background: linear-gradient(45deg, #ffffff, #00bcd4);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+
+      .product-price {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #00bcd4;
+      }
+
+      .products-count {
+        position: absolute;
+        right: 2rem;
+        bottom: 2rem;
+        font-size: 2rem;
+        font-weight: 700;
+      }
+
+      .payment-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        z-index: 999;
+        justify-content: center;
+        align-items: center;
+        backdrop-filter: blur(5px);
+      }
+
+      .modal-content {
+        background: white;
+        padding: 2rem;
+        border-radius: 16px;
+        width: 90%;
+        max-width: 400px;
+        position: relative;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        animation: fadeInUp 0.5s ease-out;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+      }
+
+      .close-modal {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        background: none;
+        border: none;
+        color: #333;
+        font-size: 1.5rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .close-modal:hover {
+        color: #00bcd4;
+        transform: rotate(90deg);
+      }
+
+      .modal-title {
+        font-size: 1.5rem;
+        margin-bottom: 1.5rem;
+        text-align: center;
+        color: #333;
+      }
+
+      .modal-form {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .form-group label {
+        font-size: 0.9rem;
+        color: #00bcd4;
+        margin-bottom: 0.5rem;
+        display: block;
+      }
+
+      .pay-button {
+        background: white;
+        color: #333;
+        border: 1px solid #EAEEF0;
+        padding: 1rem;
+        border-radius: 12px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        margin-top: 1rem;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-family: 'Figtree', sans-serif;
+        position: relative;
+      }
+
+      .pay-button:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+      }
+
+      .pay-button .radio-container {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        border: 2px solid #000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 16px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      .pay-button .radio-inner {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background-color: #000;
+        transition: all 0.2s ease;
+      }
+      
+      .pay-button .radio-container.unselected {
+        border-color: #6A8090;
+      }
+      
+      .pay-button .radio-container.unselected .radio-inner {
+        transform: scale(0);
+        opacity: 0;
+      }
+
+      .pay-button .left-section {
+        display: flex;
+        align-items: center;
+      }
+
+      .pay-button .text-content {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .pay-button .button-content {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        width: 100%;
+      }
+
+      .pay-button .title {
+        font-size: 14px;
+        font-weight: 700;
+        height: 150%;
+        color: #333;
+        font-family: 'Figtree', sans-serif;
+        text-align: left;
+      }
+
+      .pay-button .powered-by {
+        font-size: 11px;
+        font-weight: 500;
+        color: #6A8090;
+        display: flex;
+        height: 160%;
+        margin-top: 2px;
+        align-items: baseline;
+        font-family: 'Figtree', sans-serif;
+      }
+
+      .pay-button .powered-by .atoa-logo {
+        width: 24px;
+        height: 9px;
+        margin-left: 2px;
+        display: inline-block;
+      }
+
+      .pay-button .bank-logos {
+        display: flex;
+        align-items: center;
+        position: relative;
+      }
+
+      .pay-button .bank-logo-container {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        border: 1px solid #EAEEF0;
+        background-color: white;
+        overflow: hidden;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        margin-left: -6px;
+        box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.05);
+      }
+      
+      .pay-button .bank-logo-container:first-child {
+        margin-left: 0;
+      }
+
+      .pay-button .bank-logo {
+        object-fit: contain;
+        transform: scale(1.1);
+      }
+      
+      .pay-button .more-indicator {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: #EAEEF0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: -8px;
+        border: 1px solid #EAEEF0;
+        font-size: 8px;
+        font-weight: 500;
+        color: #475664;
+        position: relative;
+        box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.05);
+        font-family: 'Figtree', sans-serif;
+      }
+
+      .pay-button .spinner {
+        width: 20px;
+        height: 20px;
+        border: 2px solid rgba(0, 0, 0, 0.1);
+        border-radius: 50%;
+        border-top-color: #333;
+        animation: spin 1s linear infinite;
+        margin-right: 16px;
+        display: none;
+        position: absolute;
+        left: 16px;
+      }
+
+      .pay-button.loading .spinner {
+        display: inline-block;
+      }
+
+      .pay-button.loading .left-section {
+        justify-content: center;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .pay-button:hover {
+        transform: none;
+        box-shadow: none;
+      }
+
+      .pay-button img {
+        height: 24px;
+        width: auto;
+      }
+
+      .success-ui {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        z-index: 1000;
+        justify-content: center;
+        align-items: center;
+        backdrop-filter: blur(5px);
+      }
+
+      .success-content {
+        background: linear-gradient(135deg, #1a1a1a, #2d2d2d);
+        padding: 2rem;
+        border-radius: 16px;
+        width: 90%;
+        max-width: 400px;
+        text-align: center;
+        border: 1px solid rgba(0, 188, 212, 0.3);
+        animation: fadeInUp 0.5s ease-out;
+      }
+
+      .success-icon {
+        font-size: 4rem;
+        color: #00bcd4;
+        margin-bottom: 1rem;
+        animation: pulse 1s ease infinite;
+      }
+
+      .success-message {
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+        background: linear-gradient(45deg, #ffffff, #00bcd4);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+
+      .success-details {
+        color: #ffffff;
+        margin-bottom: 1.5rem;
+      }
+
+      .success-button {
+        background: linear-gradient(45deg, #00bcd4, #2196f3);
+        color: white;
+        border: none;
+        padding: 1rem 2rem;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .success-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 188, 212, 0.4);
+      }
+
+      .error-ui {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        z-index: 1000;
+        justify-content: center;
+        align-items: center;
+        backdrop-filter: blur(5px);
+      }
+
+      .error-content {
+        background: linear-gradient(135deg, #1a1a1a, #2d2d2d);
+        padding: 2rem;
+        border-radius: 16px;
+        width: 90%;
+        max-width: 400px;
+        text-align: center;
+        border: 1px solid rgba(255, 59, 48, 0.3);
+        animation: fadeInUp 0.5s ease-out;
+      }
+
+      .error-icon {
+        font-size: 4rem;
+        color: #ff3b30;
+        margin-bottom: 1rem;
+        animation: pulse 1s ease infinite;
+      }
+
+      .error-message {
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+        background: linear-gradient(45deg, #ffffff, #ff3b30);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+
+      .error-details {
+        color: #ffffff;
+        margin-bottom: 1rem;
+        word-break: break-word;
+      }
+
+      .error-docs-link {
+        display: inline-block;
+        color: #ff9500;
+        text-decoration: none;
+        margin-bottom: 1.5rem;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+        background: rgba(255, 149, 0, 0.1);
+      }
+
+      .error-docs-link:hover {
+        color: #ffcc00;
+        text-decoration: underline;
+        background: rgba(255, 149, 0, 0.2);
+      }
+
+      .error-button {
+        background: linear-gradient(45deg, #ff3b30, #ff9500);
+        color: white;
+        border: none;
+        padding: 1rem 2rem;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        width: 100%;
+        margin-top: 0.5rem;
+      }
+
+      .error-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(255, 59, 48, 0.4);
+      }
+
+      .loading-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        z-index: 1100;
+        justify-content: center;
+        align-items: center;
+        backdrop-filter: blur(5px);
+      }
+
+      .loading-spinner {
+        width: 50px;
+        height: 50px;
+        border: 3px solid rgba(0, 188, 212, 0.3);
+        border-radius: 50%;
+        border-top-color: #00bcd4;
+        animation: spin 1s ease-in-out infinite;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      @media (max-width: 768px) {
+        .nav-links {
+          display: none;
+        }
+
+        .hero {
+          height: 40vh;
+        }
+
+        .hero h1 {
+          font-size: 2rem;
+        }
+
+        .products-grid {
+          grid-template-columns: 1fr;
+          gap: 1rem;
+        }
+
+        .product-image {
+          height: 180px;
+        }
+      }
+
+      @media (min-width: 769px) and (max-width: 1024px) {
+        .products-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <nav class="nav-bar">
+      <a href="#" class="logo"> Atoa Demo Garage </a>
+    </nav>
+
+    <section class="hero">
+      <h1>Buy Your Dream Car</h1>
+    </section>
+
+    <section class="products-section">
+      <div id="products" class="products-grid">
+        <div class="product-card">
+          <img
+            src="https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1920&q=80"
+            alt="Porsche 911"
+            class="product-image"
+          />
+          <div class="product-info">
+            <h3 class="product-title">Porsche 911</h3>
+            <p class="product-price">£1</p>
+            <div class="product-actions">
+              <button
+                class="rent-button"
+                onclick="openRentModal('Porsche 911', 1)"
+              >
+                Rent Now
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="product-card">
+          <img
+            src="https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&w=1920&q=80"
+            alt="BMW M4"
+            class="product-image"
+          />
+          <div class="product-info">
+            <h3 class="product-title">BMW M4</h3>
+            <p class="product-price">£2</p>
+            <div class="product-actions">
+              <button class="rent-button" onclick="openRentModal('BMW M4', 2)">
+                Rent Now
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="product-card">
+          <img
+            src="https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?auto=format&fit=crop&w=1920&q=80"
+            alt="Mercedes AMG GT"
+            class="product-image"
+          />
+          <div class="product-info">
+            <h3 class="product-title">Mercedes AMG GT</h3>
+            <p class="product-price">£3</p>
+            <div class="product-actions">
+              <button
+                class="rent-button"
+                onclick="openRentModal('Mercedes AMG GT', 3)"
+              >
+                Rent Now
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div id="successUI" class="success-ui">
+      <div class="success-content">
+        <i class="fas fa-check-circle success-icon"></i>
+        <h2 class="success-message">Payment Successful!</h2>
+        <p class="success-details">
+          Your payment has been processed successfully.
+        </p>
+        <button class="success-button" onclick="closeSuccessUI()">
+          Continue Shopping
+        </button>
+      </div>
+    </div>
+
+    <div id="errorUI" class="error-ui">
+      <div class="error-content">
+        <i class="fas fa-exclamation-circle error-icon"></i>
+        <h2 class="error-message">Error Occurred</h2>
+        <p id="errorDetails" class="error-details"></p>
+        <a
+          href="https://docs.atoa.me/overview"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="error-docs-link"
+        >
+          <i class="fas fa-book"></i> View Atoa Documentation
+        </a>
+        <button class="error-button" onclick="closeErrorUI()">Close</button>
+      </div>
+    </div>
+
+    <div id="paymentModal" class="payment-modal">
+      <div class="modal-content">
+        <button class="close-modal" onclick="closePaymentModal()">
+          &times;
+        </button>
+        <h2 class="modal-title">Complete Purchase</h2>
+        <div class="modal-form">
+          <button class="pay-button" id="payButton" onclick="handlePayButtonClick()">
+            <div class="left-section">
+              <div class="radio-container unselected" onclick="">
+                <div class="radio-inner"></div>
+              </div>
+              <div class="text-content">
+                <div class="title">Pay by Bank</div>
+                <div class="powered-by">
+                  Powered by
+                  <img 
+                    src="https://atoa-store-dev.s3.eu-west-2.amazonaws.com/atoa_logo_grey.svg" 
+                    alt="Atoa" 
+                    class="atoa-logo"
+                  />
+                </div>
+              </div>
+            </div>
+            <div class="bank-logos">
+              <div class="bank-logo-container">
+                <img src="https://atoa-static-images.s3.eu-west-2.amazonaws.com/corrected_logos/barclays_logo/barclays_logo_4x.webp" alt="Barclays" class="bank-logo" />
+              </div>
+              <div class="bank-logo-container">
+                <img src="https://atoa-static-images.s3.eu-west-2.amazonaws.com/bank_logos_Apr_2025/natwest_logo/natwest_logo_4x.webp" alt="Natwest" class="bank-logo" />
+              </div>
+              <div class="bank-logo-container">
+                <img src="https://atoa-static-images.s3.eu-west-2.amazonaws.com/bank_logos_Apr_2025/lloyds_logo/lloyds_logo_4x.webp" alt="Lloyds" class="bank-logo" />
+              </div>
+              <div class="bank-logo-container">
+                <img src="https://atoa-static-images.s3.eu-west-2.amazonaws.com/bank_logos_Apr_2025/monzo_logo/monzo_logo_4x.webp" alt="Monzo" class="bank-logo" />
+              </div>
+              <div class="more-indicator">+22</div>
+            </div>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script type="module">
+      import { AtoaWebSdk } from "./atoa-web-client-sdk.js";
+
+      window.toggleRadioButton = function(event) {
+        const radioContainer = document.querySelector('.radio-container');
+        radioContainer.classList.toggle('selected');
+      }
+      
+      window.handlePayButtonClick = function() {
+        const radioContainer = document.querySelector('.radio-container');
+        
+        // If radio is unselected, select it and initiate payment
+        if (radioContainer.classList.contains('unselected')) {
+          radioContainer.classList.remove('unselected');
+        }
+        
+        // Initiate payment
+        initiatePayment();
+      }
+      
+      window.openRentModal = function (productName, dailyRate) {
+        document.getElementById("paymentModal").style.display = "flex";
+        window.currentDailyRate = dailyRate;
+
+        // Initialize radio button as unselected
+        const radioContainer = document.querySelector('.radio-container');
+        radioContainer.classList.add('unselected');
+        
+        const handleOutsideClick = function (event) {
+          const paymentModal = document.getElementById("paymentModal");
+          const errorUI = document.getElementById("errorUI");
+          if (event.target === paymentModal) {
+            closePaymentModal();
+          } else if (event.target === errorUI) {
+            closeErrorUI();
+          }
+        };
+
+        document.addEventListener("click", handleOutsideClick);
+      };
+
+      window.openPaymentModal = function (productName, price) {
+        document.getElementById("paymentModal").style.display = "flex";
+      };
+
+      window.closePaymentModal = function () {
+        document.getElementById("paymentModal").style.display = "none";
+      };
+
+      window.initiatePayment = async function () {
+        const payButton = document.getElementById("payButton");
+        try {
+          payButton.classList.add("loading");
+          payButton.disabled = true;
+
+          const myHeaders = new Headers();
+          myHeaders.append("Content-Type", "application/json");
+          myHeaders.append(
+            "Authorization",
+            "Bearer ZDVhMDkzMDAtZjg5Mi00YjI4LTk2OTItOGU2ODU2MTQyNGY5OjROeU10ZUVWcDVmbEdzYmM="
+          );
+
+          const raw = JSON.stringify({
+            customerId: "f6da70c4h-asdfsadasdsad-asdasd-daaaadasd",
+            consumerDetails: {
+              email: "rushimhatre@gmail.com",
+            },
+            orderId: "order-id-1234",
+            amount: window.currentDailyRate,
+            currency: "GBP",
+            paymentType: "DOMESTIC",
+            autoRedirect: false,
+            callbackParams: {
+              orderId: "003decb3-c35-003decb3-c221asdf-478383",
+            },
+            expiresIn: 60000000,
+            enableTips: false,
+            storeId: "5fc2200e-041f-4651-a495-2df31dcefb28",
+            allowRetry: false,
+          });
+
+          const requestOptions = {
+            method: "POST",
+            headers: myHeaders,
+            body: raw,
+            redirect: "follow",
+          };
+
+          const response = await fetch(
+            "https://uatapi.atoa.me/api/payments/process-payment",
+            requestOptions
+          );
+          const result = await response.json();
+
+          if (!response.ok) {
+            throw new Error(result.message || "Failed to process payment");
+          }
+
+          const sdk = new AtoaWebSdk({
+            environment: "SANDBOX",
+            paymentRequestId: result.paymentRequestId,
+            customerDetails: {
+              email: "rushimhatre@gmail.com",
+            },
+            onError: (error) => {
+              console.log(`%%% onError: ${JSON.stringify(error)}`);
+              showErrorUI(error?.message || "An error occurred during payment");
+            },
+            onPaymentStatusChange: (data) => {
+              console.log(`%%% onPaymentStatusChange: ${JSON.stringify(data)}`);
+              if (data && data.status === "COMPLETED") {
+                closePaymentModal();
+              } else if (data && data.status === "FAILED") {
+                showErrorUI("Payment failed. Please try again.");
+              }
+            },
+            onClose: (data) => {
+              console.log(`%%% onClose: ${JSON.stringify(data)}`);
+              if (data && data.status === "COMPLETED") {
+                showSuccessUI();
+              } else if (data && data.status === "FAILED") {
+                showErrorUI("Payment was not completed successfully");
+              }
+            },
+            onUserCancel: (data) => {
+              console.log(`%%% onUserCancel: ${JSON.stringify(data)}`);
+              showErrorUI("Payment was cancelled by user");
+            },
+          });
+
+          sdk.showPaymentDialog();
+        } catch (error) {
+          showErrorUI(error?.message || "Failed to initialize payment");
+        } finally {
+          payButton.classList.remove("loading");
+          payButton.disabled = false;
+          toggleRadioButton();
+        }
+      };
+
+      window.closeSuccessUI = function () {
+        document.getElementById("successUI").style.display = "none";
+      };
+
+      window.showSuccessUI = function () {
+        document.getElementById("successUI").style.display = "flex";
+      };
+
+      window.showErrorUI = function (errorMessage) {
+        document.getElementById("errorDetails").textContent = errorMessage;
+        document.getElementById("errorUI").style.display = "flex";
+        closePaymentModal();
+      };
+
+      window.closeErrorUI = function () {
+        document.getElementById("errorUI").style.display = "none";
+      };
+    </script>
+  </body>
+</html>
