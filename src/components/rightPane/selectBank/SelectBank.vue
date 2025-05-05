@@ -281,6 +281,8 @@ function handlePreselectedBank() {
 
 .animated-text {
   margin-left: 4px;
+  display: flex;
+  align-items: center;
 }
 
 .search-input.border-active .placeholder-overlay {
