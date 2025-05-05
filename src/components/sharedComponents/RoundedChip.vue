@@ -39,6 +39,9 @@ defineProps({
 .atoa-pay-sdk-chip-text {
   font-size: 12px;
   font-weight: inherit;
+  line-height: normal;
+  display: flex;
+  align-items: center;
 }
 
 .atoa-pay-custom-rounded-chip {
