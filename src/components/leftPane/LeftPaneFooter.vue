@@ -10,7 +10,7 @@
     <div class="footer-help-section">
       <div class="footer-help-text" :style="{
         color: paymentDetails?.merchantThemeDetails?.foregroundColor
-      }"> By continuing, you trust this merchant and accept <a href="https://paywithatoa.co.uk/terms/" class="footer-link" target="_blank">Atoa’s terms</a>.
+      }"> By continuing, you agreed to Atoa’s <a href="https://paywithatoa.co.uk/terms-june-2025/" class="footer-link" target="_blank">Terms of Service</a> and <a href="https://paywithatoa.co.uk/privacy-june-2025/" class="footer-link" target="_blank">Privacy Policy</a>.
       </div>
       <div class="footer-help-text" :style="{
         color: paymentDetails?.merchantThemeDetails?.foregroundColor
