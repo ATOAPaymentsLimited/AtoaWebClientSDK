@@ -72,7 +72,7 @@
           <ArrowIconRight :color="paymentDetails?.merchantThemeDetails?.foregroundColor" />
         </button>
         <div class="atoa-terms">
-          By continuing, you agreed to Atoa’s <a href="https://paywithatoa.co.uk/terms/" class="footer-link" target="_blank">Terms</a> and <a href="https://paywithatoa.co.uk/privacy-june-2025/" class="footer-link" target="_blank">Privacy Policy</a>.
+          By continuing, you agreed to Atoa’s <a href="https://paywithatoa.co.uk/terms/" class="footer-link" target="_blank">Terms</a> and <a href="https://paywithatoa.co.uk/atoa-business-privacy-policy/" class="footer-link" target="_blank">Privacy Policy</a>.
         </div>
       </div>
       <div v-else class="desktop-footer-section">
