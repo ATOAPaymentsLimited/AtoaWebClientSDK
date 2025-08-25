@@ -15,7 +15,7 @@
           </div>
         </div>
         <div class="sdk-action-row">
-          <button v-if="currentView === ViewType.SelectBankView && !paymentRequestFetchError && !isFetchingInitialData"
+          <button v-if="(currentView === ViewType.SelectBankView || currentView === ViewType.ChoosePaymentMethodView) && !paymentRequestFetchError && !isFetchingInitialData"
             class="sdk-action-button" @click="handleHelpAction">
             <img src="@/assets/images/icon_help.svg" alt="Help" />
           </button>
@@ -40,14 +40,24 @@
               <ExplainerUI :is-loading="isFetchingInitialData" />
             </div>
 
+            <div v-if="currentView === ViewType.ChoosePaymentMethodView" class="view-container-flex">
+              <ChoosePaymentMethodView 
+                :selected-bank="selectedBank"
+                @select-bank="handleOnBankSelect" 
+                @show-overlay="handleShowOverlay"
+                @view-all-banks="handleViewAllBanks"
+                :payment-details="paymentDetails"
+                />
+            </div>
+
             <div v-else-if="currentView === ViewType.SelectBankView" class="view-container-flex">
-              <SelectBank v-on:select-bank="handleOnBankSelect" :selected-bank-id="selectedBank?.id"
+              <SelectBank v-on:select-bank="handleOnBankSelect" :selected-bank="selectedBank" :selected-bank-id="selectedBank?.id"
                 @show-overlay="handleShowOverlay" />
             </div>
 
             <div v-else-if="currentView === ViewType.PaymentOptionsView" class="view-container-flex">
-              <PaymentOptions v-if="selectedBank && paymentDetails" :selected-bank="selectedBank"
-                :payment-details="paymentDetails" @bank-change="goToPreviousView" @status-change="goToNextView" />
+              <PaymentOptions v-if="paymentDetails && selectedBank" :selected-bank="selectedBank"
+                :payment-details="paymentDetails" @bank-change="handleBankChange" @status-change="goToNextView" />
             </div>
 
             <div v-else-if="currentView === ViewType.PaymentInProgressView" class="view-container-flex">
@@ -93,7 +103,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, inject, ref, toRefs, type Ref, type ComputedRef, provide } from 'vue'
+import { computed, inject, ref, watch, toRefs, type Ref, type ComputedRef, provide } from 'vue'
 import ExplainerUI from '@/components/rightPane/explainer/ExplainerUI.vue'
 import SelectBank from '@/components/rightPane/selectBank/SelectBank.vue'
 import Shimmer from "@/components/sharedComponents/Shimmer.vue";
@@ -108,6 +118,8 @@ import { ViewType } from '@/core/types/ViewTypeEnum'
 import type { DialogCloseEventData, DialogCloseEventHandler, UserCancelPaymentEventHandler } from '@/core/types/SdkOptions'
 import type { Failure } from '@/core/utils/http-utils'
 import ArrowIconRight from '@/components/sharedComponents/ArrowIconRight.vue';
+import ChoosePaymentMethodView from '@/components/rightPane/selectBank/ChoosePaymentMethodView.vue';
+import { DEFAULT_TRANSACTION_LIMIT } from '@/core/utils/constants';
 
 type ViewConfig = {
   title: string;
@@ -124,6 +136,9 @@ const props = defineProps({
 const viewTitleMap: Record<ViewType, ViewConfig> = {
   [ViewType.ExplainerView]: {
     title: 'How to pay with bank app?',
+  },
+  [ViewType.ChoosePaymentMethodView]: {
+    title: 'Choose payment method',
   },
   [ViewType.SelectBankView]: {
     title: 'Select your bank to continue',
@@ -147,14 +162,18 @@ const cancelPaymentHandler = inject<UserCancelPaymentEventHandler>('cancelPaymen
 const closeHandler = inject<DialogCloseEventHandler>('closeHandler');
 const paymentRequestFetchError = inject<Ref<Failure | null>>('paymentRequestFetchError');
 const isMobileWidth = inject<ComputedRef<boolean>>('isMobileWidth');
+const banksList = inject<Ref<BankData[]>>('banksList');
 
 const views = ViewType.values();
-const currentView = ref<ViewType>(ViewType.SelectBankView)
-const selectedBank = ref<BankData | null>();
+const currentView = ref<ViewType>(ViewType.PaymentOptionsView);
+const selectedBank = ref<BankData | undefined>();
 const showDisabledBankOverlay = ref(false);
 const disabledBank = ref<BankData | null>(null);
 const paymentIdempotencyId = ref<string | null>();
 const showCancellationDialog = ref(false);
+
+provide('banksList', banksList);
+
 let finalStatusData: DialogCloseEventData | undefined;
 let showPendingCancellationDialog = false;
 const pageAnimationDirection = ref<'forward' | 'backward'>('forward');
@@ -170,11 +189,25 @@ const isPending = computed(() => {
   return finalStatusData?.status === 'PENDING';
 });
 
+// Computed property to determine the initial view after ExplainerView
+const getInitialViewAfterExplainer = computed(() => {
+  return paymentDetails?.value?.options?.cardPaymentEnabled 
+    ? ViewType.ChoosePaymentMethodView 
+    : ViewType.SelectBankView;
+});
+
 const goToPreviousView = () => {
   const currentIndex = views.indexOf(currentView.value);
-  if (currentIndex < views.length - 1) {
+  if (currentIndex > 0) {
     pageAnimationDirection.value = 'backward';
-    const previousView = views[currentIndex - 1];
+    let previousView = views[currentIndex - 1];
+    
+    // If we're going back from SelectBankView and card payment is enabled, 
+    // we should go back to ChoosePaymentMethodView instead of the previous view in the array
+    if (currentView.value === ViewType.SelectBankView && paymentDetails?.value?.options?.cardPaymentEnabled) {
+      previousView = ViewType.ChoosePaymentMethodView;
+    }
+    
     setCurrentView(previousView);
   }
 };
@@ -183,7 +216,17 @@ const goToNextView = () => {
   const currentIndex = views.indexOf(currentView.value);
   if (currentIndex < views.length - 1) {
     pageAnimationDirection.value = 'forward';
-    const nextView = views[currentIndex + 1];
+    let nextView = views[currentIndex + 1];
+    
+    // If we're transitioning from ExplainerView, use the computed property to determine the next view
+    if (currentView.value === ViewType.ExplainerView) {
+      nextView = getInitialViewAfterExplainer.value;
+    }
+    // If card payment is disabled and we're going to ChoosePaymentMethodView, skip to SelectBankView
+    else if (nextView === ViewType.ChoosePaymentMethodView && !paymentDetails?.value?.options?.cardPaymentEnabled) {
+      nextView = ViewType.SelectBankView;
+    }
+    
     if ([ViewType.PaymentInProgressView, ViewType.PaymentStatusView].includes(nextView)) {
       showPendingCancellationDialog = true;
     }
@@ -229,6 +272,16 @@ const handleOnBankSelect = (bank: BankData) => {
   selectedBank.value = bank;
   pageAnimationDirection.value = 'forward';
   setCurrentView(ViewType.PaymentOptionsView);
+};
+
+const handleBankChange = () => {
+  pageAnimationDirection.value = 'backward';
+  // If card payment is enabled, go back to ChoosePaymentMethodView, otherwise go to SelectBankView
+  if (paymentDetails?.value?.options?.cardPaymentEnabled) {
+    setCurrentView(ViewType.ChoosePaymentMethodView);
+  } else {
+    setCurrentView(ViewType.SelectBankView);
+  }
 };
 
 const handleStatusChange = (data: DialogCloseEventData) => {
@@ -292,6 +345,42 @@ const closeOverlay = () => {
   showDisabledBankOverlay.value = false;
   disabledBank.value = null;
 };
+
+// Watch for changes in lastPaymentBankDetails
+watch(() => paymentDetails?.value?.lastPaymentBankDetails, (newValue) => {
+  if (newValue && banksList?.value && banksList.value.length > 0) {
+    handlePreselectedBank();
+  }
+}, { immediate: true });
+
+// Also watch banksList to handle the case when it gets populated after lastPaymentBankDetails
+watch(() => banksList?.value, (newBanksList) => {
+  if (newBanksList && newBanksList.length > 0 && paymentDetails?.value?.lastPaymentBankDetails) {
+    handlePreselectedBank();
+  }
+}, { immediate: true });
+
+const handlePreselectedBank = () => {
+  if (!banksList?.value || banksList.value.length === 0 || !paymentDetails?.value?.lastPaymentBankDetails) {
+    return;
+  }
+  
+  const bank = banksList.value.find((bank: BankData) => bank.id === paymentDetails?.value.lastPaymentBankDetails?.institutionId);
+  if (bank && bank.enabled && (bank.transactionAmountLimit ?? DEFAULT_TRANSACTION_LIMIT) >= (paymentDetails?.value.amount.amount ?? 0)) {
+    selectedBank.value = bank;
+  } else {
+    selectedBank.value = undefined;
+  }
+};
+
+const handleViewAllBanks = () => {
+  // If card payment is enabled, go to ChoosePaymentMethodView, otherwise go directly to SelectBankView
+  if (paymentDetails?.value?.options?.cardPaymentEnabled) {
+    setCurrentView(ViewType.ChoosePaymentMethodView);
+  } else {
+    setCurrentView(ViewType.SelectBankView);
+  }
+};
 </script>
 
 <style scoped>
@@ -307,7 +396,7 @@ const closeOverlay = () => {
   display: flex;
   flex-direction: column;
   flex: 1;
-  padding: 16px 0 16px 32px;
+  padding: 16px 0 16px 16px;
   overflow: hidden;
   height: 100%;
   position: relative;
@@ -377,7 +466,7 @@ const closeOverlay = () => {
   flex-direction: column;
   flex: 1;
   min-height: 0;
-  padding-right: 24px;
+  padding-right: 16px;
 
   &.padding-right {
     padding-right: 0;

@@ -20,94 +20,51 @@
       </div>
     </div>
 
-    <div class="content" :class="{'mobile': isMobileWidth}" v-if="isLoading">
-      <div class="loading-state">
-        <img src="https://atoa-gifs.s3.eu-west-2.amazonaws.com/animated_grid.gif" alt="Loading"
-          class="loading-animation">
-        <p class="loading-text">Fetching banks</p>
-      </div>
-    </div>
-
-    <div class="content" :class="{'mobile': isMobileWidth}" v-else-if="banksListFetchError">
-      <div class="error-state">
-        <p class="error-title">Oops! Something went wrong</p>
-        <p class="error-message">An unknown error occurred. We track these errors automatically, Please try again.</p>
-        <button class="retry-button" @click="fetchBanksList">Retry</button>
-      </div>
-    </div>
-
-    <div class="content" :class="{'mobile': isMobileWidth}" v-else>
-      <transition name="fade-slide">
-        <div v-if="!isSearching">
-          <BankTabs v-model="selectedType" />
-          <PopularBanks :banks="banks" :selected-type="selectedType" :selected-bank="selectedBank"
-            @select="handleBankSelect" @show-overlay="(bankData) => emit('showOverlay', bankData)" />
-        </div>
-      </transition>
-      <div class="banks-container">
-        <BankList :banks="banks" :is-searching="isSearching" :search-query="searchQuery" :selected-type="selectedType"
-          :selected-bank="selectedBank" @select="handleBankSelect"
-          @show-overlay="(bankData) => emit('showOverlay', bankData)" />
-      </div>
+    <div class="content" :class="{'mobile': isMobileWidth}">
+      <BankTabs 
+        v-if="searchQuery.length === 0"
+        ref="bankTabsRef"
+        v-model="selectedType" 
+        :banks="banksList ?? []"
+        :show-tabs="true"
+        @bank-selected="handleBankSelect" />
+      
+      <PopularBanks :banks="banksList ?? []" :search-query="searchQuery" :selected-type="selectedType" :selected-bank="selectedBank"
+        @select="handleBankSelect" @show-overlay="(bankData) => emit('showOverlay', bankData)" />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { inject, onMounted, ref, watch, type ComputedRef, type Ref } from 'vue';
-import searchIcon from '@/assets/images/icon_search.svg';
-import { PaymentsService } from '@/core/services/PaymentsService';
+import { inject, ref, type ComputedRef, type Ref, provide } from 'vue';
 import type BankData from '@/core/types/BankData';
 import BankTabs from '@/components/rightPane/selectBank/BankTabs.vue';
 import PopularBanks from '@/components/rightPane/selectBank/PopularBanks.vue';
-import BankList from '@/components/rightPane/selectBank/BankList.vue';
 import AnimatedBankType from '@/components/rightPane/selectBank/AnimatedBankType.vue';
-import type LastPaymentBankDetails from '@/core/types/LastPaymentBankDetails';
-import type PaymentDetails from '@/core/types/PaymentDetails';
-import { EnvironmentTypeEnum } from '@/core/types/Environment';
-import { DEFAULT_TRANSACTION_LIMIT } from '@/core/utils/constants';
+import searchIcon from '@/assets/images/icon_search.svg';
 
 const emit = defineEmits<{
   (e: 'selectBank', bank: BankData): void,
   (e: 'showOverlay', bank: BankData): void
 }>();
 
-const props = defineProps({
-  selectedBankId: {
-    type: String,
+defineProps({
+  selectedBank: {
+    type: Object as () => BankData | undefined,
     required: false,
   }
 });
 
 const searchQuery = ref('');
 const isSearching = ref(false);
-const isLoading = ref(false);
-const banks = ref<BankData[]>([]);
+const banksList = inject<Ref<BankData[]>>('banksList');
 const selectedType = ref<'personal' | 'business'>('personal');
-const selectedBank = ref<BankData | undefined>();
-const banksListFetchError = ref(false);
-const lastPaymentBankDetails = inject<Ref<LastPaymentBankDetails | undefined>>('lastPaymentBankDetails');
-const paymentDetails = inject<Ref<PaymentDetails>>('paymentRequestDetails');
-const environment = inject<EnvironmentTypeEnum>('environment');
 const isMobileWidth = inject<ComputedRef<boolean>>('isMobileWidth');
-const paymentsService = new PaymentsService();
+const bankTabsRef = ref();
 
-if (lastPaymentBankDetails) {
-  watch(lastPaymentBankDetails, (newValue) => {
-    if (newValue) {
-      handlePreselectedBank();
-    }
-  }, { immediate: true });
-}
-
-watch(banks, (newValue) => {
-  if (newValue) {
-    handlePreselectedBank();
-  }
-}, { immediate: true });
+provide('banksList', banksList);
 
 const handleBankSelect = (bank: BankData) => {
-  selectedBank.value = bank;
   emit('selectBank', bank);
 };
 
@@ -119,44 +76,6 @@ const handleSearchBarClick = () => {
 const handleSearchBarCloseClick = () => {
   searchQuery.value = '';
   isSearching.value = false;
-}
-
-onMounted(() => {
-  fetchBanksList();
-});
-
-async function fetchBanksList() {
-  isLoading.value = true;
-  banksListFetchError.value = false;
-
-  try {
-    banks.value = await paymentsService.fetchConsumerBankInstitutions({
-      env: environment ?? EnvironmentTypeEnum.PRODUCTION,
-    });
-
-    if (props.selectedBankId !== undefined) {
-      const bank = banks.value.find((bank) => props.selectedBankId == bank.id);
-
-      if (bank !== undefined) {
-        selectedBank.value = bank;
-      }
-    }
-  } catch (error) {
-    banksListFetchError.value = true;
-  } finally {
-    isLoading.value = false;
-  }
-}
-
-function handlePreselectedBank() {
-  const bank = banks.value?.find((bank: BankData) => bank.id === lastPaymentBankDetails?.value?.institutionId);
-
-  if (bank && bank.enabled && (bank.transactionAmountLimit ?? DEFAULT_TRANSACTION_LIMIT) >= (paymentDetails?.value.amount.amount ?? 0)) {
-    handleBankSelect(bank);
-    if (lastPaymentBankDetails?.value) {
-      lastPaymentBankDetails.value = undefined;
-    }
-  }
 }
 </script>
 
@@ -202,7 +121,7 @@ function handlePreselectedBank() {
 }
 
 .search-container {
-  margin-bottom: 24px;
+  margin-bottom: 12px;
 }
 
 .search-input {

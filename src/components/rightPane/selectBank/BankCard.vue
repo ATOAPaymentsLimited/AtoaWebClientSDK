@@ -12,7 +12,6 @@
       </div>
     </div>
     <div class="radio-checkbox" :class="{ selected: isSelected }">
-      <img v-if="isSelected" src="@/assets/images/black_check.svg" alt="Selected" class="checkmark">
     </div>
   </div>
 </template>
@@ -60,21 +59,28 @@ const handleClick = () => {
   border-radius: 8px;
 }
 
+.bank-card:hover {
+  background-color: var(--grey-10);
+}
+
 .bank-logo {
-  width: 32px;
-  height: 32px;
+  width: 100%;
+  height: 60px;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-right: 16px;
-  border: 1px solid var(--grey-100);
-  border-radius: 6px;
+  border: 1.5px solid var(--grey-200);
+  border-radius: 12px;
 }
 
 .logo-image {
-  width: 28px;
-  height: 28px;
-  object-fit: contain;
+  width: 42px;
+  height: 42px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .bank-info {
@@ -89,8 +95,8 @@ const handleClick = () => {
 
 .bank-name {
   font-size: 14px;
-  font-weight: 500;
-  color: var(--grey-600);
+  font-weight: 400;
+  color: var(--grey-900);
 }
 
 .warning-icon {
@@ -118,16 +124,11 @@ const handleClick = () => {
 }
 
 .radio-checkbox.selected {
-  border: none;
+  border: 2px solid var(--grey-900);
 }
 
 .bank-card:hover:not(.disabled) .radio-checkbox:not(.selected) {
   border-color: var(--grey-400);
-}
-
-.checkmark {
-  width: 100%;
-  height: 100%;
 }
 
 .bank-card.disabled {

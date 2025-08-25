@@ -209,12 +209,13 @@ onBeforeUnmount(() => {
 @media (max-width: 768px) {
   .payment-dialog {
     width: 100%;
-    height: auto;
-    border-radius: 16px 16px 0 0;
+    height: 100%;
+    border-radius: 0;
+    max-height: 100vh;
   }
 
   .payment-dialog-container {
-    align-items: end;
+    align-items: center;
   }
 
   .content-row {
@@ -230,14 +231,22 @@ onBeforeUnmount(() => {
 @media (max-height: 668px) {
   .payment-dialog {
     width: 100%;
-    height: auto;
+    height: 100%;
+    border-radius: 0;
+    max-height: 100vh;
+  }
+
+  .payment-dialog-container {
+    align-items: center;
   }
 }
 
 @media (max-height: 668px) and (orientation: landscape) {
   .payment-dialog {
     width: 100%;
-    height: auto;
+    height: 100%;
+    border-radius: 0;
+    max-height: 100vh;
   }
 
   .left-pane {
@@ -245,7 +254,7 @@ onBeforeUnmount(() => {
   }
 
   .payment-dialog-container {
-    align-items: end;
+    align-items: center;
   }
 
   .content-row {
