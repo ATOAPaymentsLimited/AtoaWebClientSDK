@@ -374,12 +374,7 @@ const handlePreselectedBank = () => {
 };
 
 const handleViewAllBanks = () => {
-  // If card payment is enabled, go to ChoosePaymentMethodView, otherwise go directly to SelectBankView
-  if (paymentDetails?.value?.options?.cardPaymentEnabled) {
-    setCurrentView(ViewType.ChoosePaymentMethodView);
-  } else {
-    setCurrentView(ViewType.SelectBankView);
-  }
+  setCurrentView(ViewType.SelectBankView);
 };
 </script>
 
