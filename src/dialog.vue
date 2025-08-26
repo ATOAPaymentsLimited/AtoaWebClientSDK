@@ -24,6 +24,13 @@
 </template>
 
 <script setup lang="ts">
+// TypeScript declaration for RapydCheckoutToolkit
+declare global {
+  interface Window {
+    RapydCheckoutToolkit: any;
+  }
+}
+
 import { onErrorCaptured, onMounted, provide, ref } from 'vue';
 import PaymentDialog from '@/components/PaymentDialog.vue';
 import { sdkTheme } from "@/assets/colors/colors";
@@ -34,6 +41,21 @@ import { AtoaPayWebSDKError } from '@/core/types/Error';
 import { loadFigtreeFont } from '@/core/utils/common';
 
 const dialogContainer = ref<HTMLElement | null>(null);
+
+// Function to load Rapyd script
+const loadRapydScript = () => {
+  // Check if script is already loaded
+  if (window.RapydCheckoutToolkit || document.querySelector('script[src*="rapyd"]')) {
+    return;
+  }
+
+  const script = document.createElement('script');
+  script.src = 'https://sandboxcheckouttoolkit.rapyd.net';
+  script.async = true;
+  script.defer = true;
+  
+  document.head.appendChild(script);
+};
 
 const props = defineProps<SdkOptions>();
 
@@ -62,6 +84,7 @@ onErrorCaptured((error, instance) => {
 
 onMounted(() => {
   loadFigtreeFont();
+  loadRapydScript();
 
   Object.entries(sdkTheme).forEach(([key, value]) => {
     document.documentElement.style.setProperty(`--${key}`, String(value));

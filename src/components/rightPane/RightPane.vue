@@ -47,6 +47,7 @@
                 @show-overlay="handleShowOverlay"
                 @view-all-banks="handleViewAllBanks"
                 :payment-details="paymentDetails"
+                @pay-by-card="handlePayByCard"
                 />
             </div>
 
@@ -57,7 +58,14 @@
 
             <div v-else-if="currentView === ViewType.PaymentOptionsView" class="view-container-flex">
               <PaymentOptions v-if="paymentDetails && selectedBank" :selected-bank="selectedBank"
-                :payment-details="paymentDetails" @bank-change="handleBankChange" @status-change="goToNextView" />
+                :payment-details="paymentDetails" @bank-change="handleBankChange" @status-change="goToNextView" @update-card-checkout-id="handleUpdateCardCheckoutId" />
+            </div>
+
+            <div v-else-if="currentView === ViewType.PayByCardView" class="view-container-flex">
+              <CardCheckoutView 
+                :totalAmountWithTip="paymentDetails?.amount?.amount || 0"
+                :currency="paymentDetails?.amount?.currency || 'GBP'"
+              />
             </div>
 
             <div v-else-if="currentView === ViewType.PaymentInProgressView" class="view-container-flex">
@@ -120,6 +128,7 @@ import type { Failure } from '@/core/utils/http-utils'
 import ArrowIconRight from '@/components/sharedComponents/ArrowIconRight.vue';
 import ChoosePaymentMethodView from '@/components/rightPane/selectBank/ChoosePaymentMethodView.vue';
 import { DEFAULT_TRANSACTION_LIMIT } from '@/core/utils/constants';
+import CardCheckoutView from '@/components/rightPane/selectBank/CardCheckoutView.vue';
 
 type ViewConfig = {
   title: string;
@@ -146,6 +155,9 @@ const viewTitleMap: Record<ViewType, ViewConfig> = {
   [ViewType.SelectBankView]: {
     title: 'Select your bank to continue',
   },
+  [ViewType.PayByCardView]: {
+    title: 'Pay by card',
+  },
   [ViewType.PaymentInProgressView]: {
     title: 'Payment in progress',
   },
@@ -169,16 +181,17 @@ const currentView = ref<ViewType>(ViewType.PaymentOptionsView);
 const selectedBank = ref<BankData | undefined>();
 const showDisabledBankOverlay = ref(false);
 const disabledBank = ref<BankData | null>(null);
-const paymentIdempotencyId = ref<string | null>();
+const paymentIdempotencyId = ref<string | null>(null);
+const cardCheckoutId = ref<string | null>('');
 const showCancellationDialog = ref(false);
 
 provide('banksList', banksList);
+provide('paymentIdempotencyId', paymentIdempotencyId);
+provide('cardCheckoutId', cardCheckoutId);
 
 let finalStatusData: DialogCloseEventData | undefined;
 let showPendingCancellationDialog = false;
 const pageAnimationDirection = ref<'forward' | 'backward'>('forward');
-
-provide('paymentIdempotencyId', paymentIdempotencyId);
 
 const showBackButton = computed(
   () => (currentView.value === ViewType.PaymentInProgressView || currentView.value === ViewType.SelectBankView || currentView.value === ViewType.ChoosePaymentMethodView) && !isFetchingInitialData.value
@@ -375,6 +388,14 @@ const handlePreselectedBank = () => {
 
 const handleViewAllBanks = () => {
   setCurrentView(ViewType.SelectBankView);
+};
+
+const handlePayByCard = () => {
+  setCurrentView(ViewType.PayByCardView);
+};
+
+const handleUpdateCardCheckoutId = (id: string | null) => {
+  cardCheckoutId.value = id;
 };
 </script>
 

@@ -1,22 +1,5 @@
 <template>
   <div class="scrollable-content pay-by-card-container">
-    <div v-if="isDesktop" class="header-options">
-      <div class="back-arrow-container" @click="goBack">
-        <img
-          src="@/assets/images/forward.svg"
-          alt="back-arrow"
-          width="10px"
-          height="10px"
-          style="transform: rotate(360deg)"
-        />
-      </div>
-      <span class="body-1 bold">Pay by card</span>
-      <div style="width: 32px" />
-    </div>
-    <!-- <PayByBankCard
-      v-if="!loadingCardCheckout && !showCardError && !paymentSuccess"
-      @switch-to-bank="goBack"
-    /> -->
     <div
       :style="{ height: showCardError ? '100%' : '70%' }"
       :class="cardCheckoutContainerClass"
@@ -27,20 +10,20 @@
       >
         <div class="loading-spinner"></div>
       </div>
-      <div
-        v-show="!loadingCardCheckout && !showCardError"
-        class="rapyd-checkout-container"
-        id="rapyd-checkout"
-      ></div>
-      <!-- <CardError v-if="showCardError" @retry="handleRetry" /> -->
+      <div v-if="showCardError" class="card-error-container">
+        <div class="error-message">
+          <img src="@/assets/images/error_filled.svg" alt="error" width="48" height="48" />
+          <h3>Payment Failed</h3>
+          <p>Something went wrong with your payment. Please try again.</p>
+          <button @click="handleRetry" class="retry-button">Try Again</button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, ref, nextTick } from "vue";
-// import PayByBankCard from "@/components/PaymentMethod/PayByBankCard.vue";
-// import CardError from "./CardError.vue";
+import { computed, onMounted, ref, nextTick, onUnmounted, inject, type Ref, watch } from "vue";
 
 // TypeScript declaration for RapydCheckoutToolkit
 declare global {
@@ -49,17 +32,20 @@ declare global {
   }
 }
 
-const emit = defineEmits(["goBack", "cardCheckoutClosed"]);
+const props = defineProps<{
+  totalAmountWithTip: number;
+  currency: string;
+}>();
 
+const emit = defineEmits(["goBack", "cardCheckoutClosed", "paymentSuccess", "paymentFailure"]);
+
+// Inject cardCheckoutId from PaymentDialog.vue
+const injectedCardCheckoutId = inject<Ref<string | null>>('cardCheckoutId');
 const loadingCardCheckout = ref(false);
 const rapydCheckout = ref<any>(null);
 const windowWidth = ref(window.innerWidth);
 const showCardError = ref(false);
-// const paymentSuccess = ref(false);
-
-// Extract state from stores
-// const { totalAmountWithTip } = storeToRefs(paymentStore);
-// const { cardCheckoutId, cardCheckoutLoading } = storeToRefs(cardStore);
+const paymentSuccess = ref(false);
 
 const isDesktop = computed(() => windowWidth.value > 640);
 
@@ -74,15 +60,11 @@ const cardCheckoutContainerClass = computed(() => {
   return "";
 });
 
-const goBack = () => {
+const handleRetry = () => {
+  showCardError.value = false;
   emit("cardCheckoutClosed");
+  initializePayment();
 };
-
-// const handleRetry = () => {
-//   showCardError.value = false;
-//   emit("cardCheckoutClosed");
-//   initializePayment();
-// };
 
 const setupRapydEventListeners = () => {
   loadingCardCheckout.value = true;
@@ -91,144 +73,237 @@ const setupRapydEventListeners = () => {
     loadingCardCheckout.value = event.detail.loading;
   });
 
-//   window.addEventListener("onCheckoutPaymentSuccess", (event: any) => {
-//     // handlePaymentSuccess(event);
-//   });
+  window.addEventListener("onCheckoutPaymentSuccess", (event: any) => {
+    handlePaymentSuccess(event);
+  });
 
-//   window.addEventListener("onCheckoutFailure", (event: any) => {
-//     // handlePaymentFailure(event);
-//   });
+  window.addEventListener("onCheckoutFailure", (event: any) => {
+    handlePaymentFailure(event);
+  });
 
-//   window.addEventListener("onCheckoutPaymentFailure", (event: any) => {
-//     // handlePaymentFailure(event);
-//   });
+  window.addEventListener("onCheckoutPaymentFailure", (event: any) => {
+    handlePaymentFailure(event);
+  });
+};
 
-  // cardStore.initializeListeners = true;
+const createPortalContainer = () => {
+  // Remove existing container if it exists
+  const existingContainer = document.getElementById('rapyd-checkout');
+  if (existingContainer) {
+    existingContainer.remove();
+  }
+
+  // Create container in main document
+  const portalContainer = document.createElement('div');
+  portalContainer.id = 'rapyd-checkout';
+  portalContainer.className = 'rapyd-checkout-container';
+  
+  // Set exact dimensions to match your component
+  portalContainer.style.cssText = `
+    position: absolute;
+    width: 425px;
+    min-height: 400px;
+    z-index: 10000;
+    background: transparent;
+    overflow: hidden; /* Prevent scrolling */
+    box-sizing: border-box; /* Include border in width calculation */
+  `;
+  
+  document.body.appendChild(portalContainer);
+
+  // Apply iframe styles directly to the portal container
+  // This will affect any iframes that get injected later
+  const style = document.createElement('style');
+  style.textContent = `
+    
+    #rapyd-checkout iframe {
+      max-height: 590px !important;
+      min-height: 590px !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      min-width: 450px !important;
+      box-sizing: border-box !important;
+      border: none !important;
+    }
+    
+    #rapyd-checkout iframe[style*="width"] {
+      width: 100% !important;
+    }
+    
+    @media only screen and (max-width: 525px) {
+      #rapyd-checkout iframe {
+        width: calc(100% + 64px) !important;
+        margin-left: 0px !important;
+      }
+    }
+    
+    #rapyd-checkout *[style*="width"] {
+      max-width: 100% !important;
+    }
+  `;
+  
+  // Add the style to the document head
+  document.head.appendChild(style);
+  
+  // Position it to match your component's location exactly
+  positionPortalContainer(portalContainer);
+  
+  return portalContainer;
+};
+
+const positionPortalContainer = (portalContainer: HTMLElement) => {
+  // Find your Vue component in the shadow DOM
+  const shadowRoot = document.querySelector('atoa-pay-sdk-dialog')?.shadowRoot;
+  if (shadowRoot) {
+    const componentElement = shadowRoot.querySelector('.pay-by-card-container');
+    if (componentElement) {
+      const rect = componentElement.getBoundingClientRect();
+      
+      // Position the portal container exactly over your component
+      portalContainer.style.top = rect.top + 'px';
+      portalContainer.style.left = rect.left + 'px';
+    }
+  }
 };
 
 const initializePayment = async () => {
   try {
-    // if (!cardCheckoutId.value) {
-    //   throw new Error("No card checkout ID available");
-    // }
+    const checkoutId = injectedCardCheckoutId?.value;
+    
+    if (!checkoutId) {
+      throw new Error("No card checkout ID available");
+    }
 
-    // Initialize Rapyd checkout with real data from secure auth
-    if (window.RapydCheckoutToolkit) {
-      rapydCheckout.value = new window.RapydCheckoutToolkit({
-        pay_button_text: "Pay Now",
-        pay_button_color: "#e42444",
-        id: "checkout_e01ce72a883a693b4deb40f41b52e6b5", // ✅ Use prop instead of API call
-        amount: 20, // ✅ Use local amount calculation
-        currency: "GBP",
-        style: {
-          submit: {
-            base: {
-              color: "white",
-              padding: 0,
-            },
-          },
-          body: {
-            boxShadow: "none",
+    // Create portal container in main document for UI testing
+    const portalContainer = createPortalContainer();
+    console.log("Static container created for UI testing");
+
+    if (!window.RapydCheckoutToolkit) {
+      let attempts = 0;
+      const maxAttempts = 100;
+      
+      while (!window.RapydCheckoutToolkit && attempts < maxAttempts) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        attempts++;
+      }
+      
+      if (!window.RapydCheckoutToolkit) {
+        throw new Error("RapydCheckoutToolkit not loaded after waiting");
+      }
+    }
+
+    // Initialize Rapyd with container during construction
+    rapydCheckout.value = new window.RapydCheckoutToolkit({
+      pay_button_text: "Pay Now",
+      pay_button_color: "#e42444",
+      id: checkoutId,
+      amount: props.totalAmountWithTip,
+      currency: props.currency,
+      container: portalContainer,
+      style: {
+        submit: {
+          base: {
+            color: "white",
             padding: 0,
-          },
-          container: {
-            padding: 0,
-            margin: 0,
-          },
-          div: {
-            padding: 0,
-            margin: 0,
           },
         },
-      });
-
-      rapydCheckout.value.displayCheckout();
-    } else {
-      throw new Error("RapydCheckoutToolkit not loaded");
-    }
+        body: {
+          boxShadow: "none",
+          padding: 0,
+        },
+        container: {
+          padding: 0,
+          margin: 0,
+        },
+        div: {
+          padding: 0,
+          margin: 0,
+        },
+      },
+    });
+    
+    // Call displayCheckout without parameters
+    rapydCheckout.value.displayCheckout();
+    
+    // Hide loader after successful container creation
+    loadingCardCheckout.value = false;
+    
   } catch (error) {
+    loadingCardCheckout.value = false;
     emit("cardCheckoutClosed");
   }
 };
 
-// const handlePaymentSuccess = (event: any) => {
-//   // Use real payment data from the event or fallback to stored data
-//   const paymentIdempotencyId = event.detail?.metadata?.paymentIdempotencyId;
-//   paymentSuccess.value = true;
-//   // Navigate to transaction details with real payment ID
-//   router.replace({
-//     name: "transaction-details",
-//     query: {
-//       ...route.query,
-//       paymentIdempotencyId: paymentIdempotencyId,
-//       status: "SUCCESS",
-//     },
-//   });
-// };
+const handlePaymentSuccess = (event: any) => {
+  const paymentIdempotencyId = event.detail?.metadata?.paymentIdempotencyId;
+  paymentSuccess.value = true;
+  
+  emit("paymentSuccess", {
+    paymentIdempotencyId,
+    amount: props.totalAmountWithTip,
+    currency: props.currency,
+    status: "SUCCESS"
+  });
+};
 
-// const handlePaymentFailure = (event: any) => {
-//   // Track failed payment
-//   const { source } = route.query;
-//   Analytics.trackClickEvent("Payment Failure", route.name?.toString(), {
-//     paymentRequestSource: `${source}`,
-//     amount: totalAmountWithTip.value,
-//     error: event.detail.error,
-//   });
-
-//   showCardError.value = true;
-// };
-
-// Initialize card checkout
-// const initCardCheckout = () => {
-//   showCardError.value = false;
-
-//   // Track the click event
-//   const { source } = route.query;
-//   Analytics.trackClickEvent("Pay by Card", route.name?.toString(), {
-//     paymentRequestSource: `${source}`,
-//     amount: totalAmountWithTip.value,
-//     merchantId: paymentStore.paymentDetails?.merchantId,
-//   });
-
-//   // Initialize payment after view is updated
-//   nextTick(() => {
-//     initializePayment();
-//   });
-// };
+const handlePaymentFailure = (event: any) => {
+  showCardError.value = true;
+  
+  emit("paymentFailure", {
+    error: event.detail?.error,
+    amount: props.totalAmountWithTip,
+    currency: props.currency
+  });
+};
 
 onMounted(() => {
-//   if (!cardStore.initializeListeners) {
-    setupRapydEventListeners();
+  setupRapydEventListeners();
+
+  if (injectedCardCheckoutId?.value) {
     nextTick(() => {
       initializePayment();
-    })
-//   }
+    });
+  }
+  
+  // Handle window resize to reposition portal
+  const handleResize = () => {
+    const portalContainer = document.getElementById('rapyd-checkout');
+    if (portalContainer) {
+      positionPortalContainer(portalContainer);
+    }
+  };
+  
+  window.addEventListener('resize', handleResize);
+  
+  // Cleanup resize listener
+  onUnmounted(() => {
+    window.removeEventListener('resize', handleResize);
+  });
 });
 
-// watch(
-//   cardCheckoutId,
-//   (newVal, oldVal) => {
-//     if (newVal && newVal !== oldVal) {
-//       // Clean up Rapyd checkout if it exists
-//       if (rapydCheckout.value) {
-//         try {
-//           rapydCheckout.value.closeCheckout();
-//         } catch (error) {
-//           // Silent cleanup
-//         }
-//         rapydCheckout.value = null;
-//       }
-//       initCardCheckout();
-//     }
-//   },
-//   { immediate: true }
-// );
+// Cleanup on component unmount
+onUnmounted(() => {
+  // Remove portal container
+  const portalContainer = document.getElementById('rapyd-checkout-portal');
+  if (portalContainer) {
+    portalContainer.remove();
+  }
+  
+  // Close checkout if it exists
+  if (rapydCheckout.value) {
+    try {
+      rapydCheckout.value.closeCheckout();
+    } catch (error) {
+      console.warn("Error closing checkout:", error);
+    }
+  }
+});
 </script>
 
-<style scoped>
+<style>
 
 .pay-by-card-container {
-  width: 343px;
+  width: 100%;;
   margin: 0 auto;
 }
 
@@ -297,33 +372,5 @@ onMounted(() => {
   100% {
     transform: rotate(360deg);
   }
-}
-
-:deep(iframe) {
-  max-height: 590px !important;
-  min-height: 590px !important;
-  width: 100% !important;
-  max-width: 100% !important;
-  min-width: 400px !important;
-  box-sizing: border-box !important;
-  margin-left: 0 !important;
-
-  &[style*="width"] {
-    width: 100% !important;
-  }
-
-  @media only screen and (max-width: 525px) {
-    width: calc(100% + 64px) !important;
-    margin-left: 0px !important;
-  }
-}
-
-:deep(#rapyd-checkout) {
-  width: 100% !important;
-  max-width: 100% !important;
-}
-
-:deep(#rapyd-checkout *[style*="width"]) {
-  max-width: 100% !important;
 }
 </style>

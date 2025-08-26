@@ -137,8 +137,8 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'bankChange'): void;
   (e: 'statusChange', transactionDetails?: TransactionDetails): void;
+  (e: 'updateCardCheckoutId', id: string | null): void;
 }>();
-
 
 const bankWebsiteUrl = ref('');
 const isMobileWidth = inject<ComputedRef<boolean>>('isMobileWidth');
@@ -211,12 +211,30 @@ const fetchAuthorisationData = async () => {
   try {
     fetchAuthorisationError.value = null;
     isLoading.value = true;
-    const authResponseData = await paymentsService.callBankAuthorisationUrl(paymentRequestId, props.paymentDetails, props.selectedBank);
-    paymentAuthResponse.value = authResponseData;
-    if (paymentIdempotencyId) {
-      paymentIdempotencyId.value = paymentAuthResponse.value?.paymentIdempotencyId;
+    
+    // If card payment is enabled, fetch both bank and card checkout details
+    if (props.paymentDetails?.options?.cardPaymentEnabled) {
+      const [bankAuthResponse, cardAuthResponse] = await Promise.all([
+        paymentsService.callBankAuthorisationUrl(paymentRequestId, props.paymentDetails, props.selectedBank),
+        paymentsService.getCardCheckoutDetails(paymentRequestId, props.paymentDetails)
+      ]);
+      
+      paymentAuthResponse.value = bankAuthResponse;
+      
+      // Emit the card checkout ID to the parent
+      const cardCheckoutIdValue = cardAuthResponse?.cardCheckoutId || null;
+      emit('updateCardCheckoutId', cardCheckoutIdValue);
+      
+      if (paymentIdempotencyId) {
+        paymentIdempotencyId.value = cardAuthResponse.paymentIdempotencyId;
+      }
+      
+      bankWebsiteUrl.value = bankAuthResponse?.authorisationUrl;
+    } else {
+      const authResponseData = await paymentsService.callBankAuthorisationUrl(paymentRequestId, props.paymentDetails, props.selectedBank);
+      paymentAuthResponse.value = authResponseData;
+      bankWebsiteUrl.value = authResponseData?.authorisationUrl;
     }
-    bankWebsiteUrl.value = authResponseData?.authorisationUrl;
   } catch (error: unknown) {
     fetchAuthorisationError.value = (error as Failure);
   } finally {
@@ -262,7 +280,15 @@ const checkPaymentRequestStatus = async () => {
 function restartAuthUrlsTimer() {
   attemptCount = 0;
   maxAttemptsReached.value = false;
-  refetchAuthUrls();
+  
+  // If card payment is enabled, refetch both bank and card data
+  if (props.paymentDetails?.options?.cardPaymentEnabled) {
+    fetchAuthorisationData();
+  } else {
+    // Original logic for bank-only payments
+    refetchAuthUrls();
+  }
+  
   restartPaymentPolling();
   authUrlPollInterval.value = setInterval(refetchAuthUrls, 280000); // 4 minutes and 40 seconds
 }
@@ -278,7 +304,13 @@ const refetchAuthUrls = async () => {
     }
     resetPaymentPolling();
   } else {
-    fetchAuthorisationData();
+    // If card payment is enabled, refetch both bank and card data
+    if (props.paymentDetails?.options?.cardPaymentEnabled) {
+      await fetchAuthorisationData();
+    } else {
+      // Original logic for bank-only payments
+      fetchAuthorisationData();
+    }
   }
 }
 
@@ -303,7 +335,7 @@ const resetPaymentPolling = () => {
 }
 
 onMounted(() => {
-  restartAuthUrlsTimer();
+  fetchAuthorisationData();
 });
 
 onBeforeUnmount(() => {
