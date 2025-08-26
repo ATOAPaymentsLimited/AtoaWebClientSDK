@@ -19,7 +19,7 @@
             class="sdk-action-button" @click="handleHelpAction">
             <img src="@/assets/images/icon_help.svg" alt="Help" />
           </button>
-          <button class="sdk-action-button" :class="{ error: paymentRequestFetchError }" @click="handleClose">
+          <button v-if="!isFetchingInitialData" class="sdk-action-button" :class="{ error: paymentRequestFetchError }" @click="handleClose">
             <img src="@/assets/images/icon_close.svg" alt="Close" />
           </button>
         </div>
@@ -137,14 +137,14 @@ const viewTitleMap: Record<ViewType, ViewConfig> = {
   [ViewType.ExplainerView]: {
     title: 'How to pay with bank app?',
   },
+  [ViewType.PaymentOptionsView]: {
+    title: 'Scan to pay',
+  },
   [ViewType.ChoosePaymentMethodView]: {
     title: 'Choose payment method',
   },
   [ViewType.SelectBankView]: {
     title: 'Select your bank to continue',
-  },
-  [ViewType.PaymentOptionsView]: {
-    title: 'Scan to pay',
   },
   [ViewType.PaymentInProgressView]: {
     title: 'Payment in progress',
@@ -181,7 +181,7 @@ const pageAnimationDirection = ref<'forward' | 'backward'>('forward');
 provide('paymentIdempotencyId', paymentIdempotencyId);
 
 const showBackButton = computed(
-  () => currentView.value === ViewType.PaymentOptionsView || currentView.value === ViewType.PaymentInProgressView
+  () => (currentView.value === ViewType.PaymentInProgressView || currentView.value === ViewType.SelectBankView || currentView.value === ViewType.ChoosePaymentMethodView) && !isFetchingInitialData.value
 );
 
 const isPending = computed(() => {
