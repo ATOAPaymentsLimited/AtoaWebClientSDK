@@ -10,20 +10,14 @@
       >
         <div class="loading-spinner"></div>
       </div>
-      <div v-if="showCardError" class="card-error-container">
-        <div class="error-message">
-          <img src="@/assets/images/error_filled.svg" alt="error" width="48" height="48" />
-          <h3>Payment Failed</h3>
-          <p>Something went wrong with your payment. Please try again.</p>
-          <button @click="handleRetry" class="retry-button">Try Again</button>
-        </div>
-      </div>
+      <CardError v-if="showCardError" @retry="handleRetry" />
     </div>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, ref, nextTick, onUnmounted, inject, type Ref, watch } from "vue";
+import { computed, onMounted, ref, nextTick, onUnmounted, inject, type Ref } from "vue";
+import CardError from "@/components/rightPane/selectBank/CardError.vue";
 
 // TypeScript declaration for RapydCheckoutToolkit
 declare global {
@@ -303,7 +297,8 @@ onUnmounted(() => {
 <style>
 
 .pay-by-card-container {
-  width: 100%;;
+  width: 100%;
+  height: 100%;
   margin: 0 auto;
 }
 
