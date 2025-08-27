@@ -1,5 +1,5 @@
 <template>
-  <div class="scrollable-content pay-by-card-container">
+  <div class="pay-by-card-container">
     <div
       :style="{ height: showCardError ? '100%' : '70%' }"
       :class="cardCheckoutContainerClass"
@@ -80,6 +80,9 @@ const setupRapydEventListeners = () => {
   });
 };
 
+// Global cleanup function reference
+let cleanupResizeObserver: (() => void) | null = null;
+
 const createPortalContainer = () => {
   // Remove existing container if it exists
   const existingContainer = document.getElementById('rapyd-checkout');
@@ -142,7 +145,53 @@ const createPortalContainer = () => {
   // Position it to match your component's location exactly
   positionPortalContainer(portalContainer);
   
+  // Set up resize observer to reposition when needed
+  cleanupResizeObserver = setupResizeObserver(portalContainer);
+  
   return portalContainer;
+};
+
+const setupResizeObserver = (portalContainer: HTMLElement) => {
+  // Reposition on window resize
+  const handleResize = () => {
+    positionPortalContainer(portalContainer);
+  };
+  
+  window.addEventListener('resize', handleResize);
+  
+  // Also reposition after a short delay to ensure iframe is loaded
+  setTimeout(() => {
+    positionPortalContainer(portalContainer);
+  }, 100);
+  
+  // Reposition when iframe loads
+  const handleIframeLoad = () => {
+    positionPortalContainer(portalContainer);
+  };
+  
+  // Listen for iframe load events
+  const observer = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      if (mutation.type === 'childList') {
+        mutation.addedNodes.forEach((node) => {
+          if (node.nodeType === Node.ELEMENT_NODE) {
+            const element = node as Element;
+            if (element.tagName === 'IFRAME') {
+              element.addEventListener('load', handleIframeLoad);
+            }
+          }
+        });
+      }
+    });
+  });
+  
+  observer.observe(portalContainer, { childList: true, subtree: true });
+  
+  // Clean up function
+  return () => {
+    window.removeEventListener('resize', handleResize);
+    observer.disconnect();
+  };
 };
 
 const positionPortalContainer = (portalContainer: HTMLElement) => {
@@ -150,12 +199,15 @@ const positionPortalContainer = (portalContainer: HTMLElement) => {
   const shadowRoot = document.querySelector('atoa-pay-sdk-dialog')?.shadowRoot;
   if (shadowRoot) {
     const componentElement = shadowRoot.querySelector('.pay-by-card-container');
+    console.log("componentElement", componentElement);
     if (componentElement) {
       const rect = componentElement.getBoundingClientRect();
       
       // Position the portal container exactly over your component
       portalContainer.style.top = rect.top + 'px';
       portalContainer.style.left = rect.left + 'px';
+      console.log("portalContainer", portalContainer.style.top);
+      console.log("portalContainer", portalContainer.style.left);
     }
   }
 };
@@ -278,9 +330,15 @@ onMounted(() => {
 // Cleanup on component unmount
 onUnmounted(() => {
   // Remove portal container
-  const portalContainer = document.getElementById('rapyd-checkout-portal');
+  const portalContainer = document.getElementById('rapyd-checkout');
   if (portalContainer) {
     portalContainer.remove();
+  }
+  
+  // Clean up resize observer and event listeners
+  if (cleanupResizeObserver) {
+    cleanupResizeObserver();
+    cleanupResizeObserver = null;
   }
   
   // Close checkout if it exists
