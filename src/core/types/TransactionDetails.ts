@@ -1,4 +1,3 @@
-import type PaymentRequestStatusDetails from "./PaymentRequestStatusDetails";
 export default interface TransactionDetails {
   paidAmount: string;
   currency: string;
@@ -14,7 +13,7 @@ export default interface TransactionDetails {
   status?: string | null;
   errorDescription: string | null;
   pendingTrasactionError: string | null;
-  paymentRequest: PaymentRequestStatusDetails;
+  orderId?: string | null;
   redirectUrlParams?: Record<string, string>;
   signature?: string;
   signatureHash?: string;
