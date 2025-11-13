@@ -11,8 +11,7 @@
           <div class="label-text">Reference ID</div>
           <div class="value-text">{{ transactionDetails?.paymentIdempotencyId }}</div>
         </div>
-        <button class="copy-button"
-          @click="copyToClipboard(transactionDetails?.paymentIdempotencyId ?? '')">
+        <button class="copy-button" @click="copyToClipboard(transactionDetails?.paymentIdempotencyId ?? '')">
           <img src="@/assets/images/icon_copy.svg" alt="Copy" />
         </button>
       </div>
@@ -20,9 +19,9 @@
       <div class="reference-row">
         <div class="value-container">
           <div class="label-text">Order ID</div>
-          <div class="value-text">{{ transactionDetails?.paymentRequest?.orderId }}</div>
+          <div class="value-text">{{ transactionDetails?.orderId }}</div>
         </div>
-        <button class="copy-button" @click="copyToClipboard(transactionDetails?.paymentRequest?.orderId ?? '')">
+        <button class="copy-button" @click="copyToClipboard(transactionDetails?.orderId ?? '')">
           <img src="@/assets/images/icon_copy.svg" alt="Copy" />
         </button>
       </div>

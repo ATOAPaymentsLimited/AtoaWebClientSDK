@@ -2,11 +2,8 @@
   <div class="left-pane-footer">
     <div class="payment-dialog-badges">
       <RoundedChip text="Powered by" :rightImage="atoaLogo" />
-      <RoundedChip text="FCA Authorised" :leftImage="atoaShieldIcon" backgroundColor="var(--positive-subtle)"
-        color="var(--positive-deep)" />
-      <RoundedChip text="Secure" :leftImage="atoaLockIcon" backgroundColor="var(--positive-subtle)"
-        color="var(--positive-deep)" />
     </div>
+    <TrustBadges />
     <div class="footer-help-section">
       <div class="footer-help-text" :style="{
         color: paymentDetails?.merchantThemeDetails?.foregroundColor
@@ -25,10 +22,9 @@
 <script setup lang="ts">
 import RoundedChip from "@/components/sharedComponents/RoundedChip.vue";
 import atoaLogo from "@/assets/images/atoa_logo.svg";
-import atoaShieldIcon from "@/assets/images/icon_check_shield.svg";
-import atoaLockIcon from "@/assets/images/icon_lock.svg";
 import type PaymentDetails from "@/core/types/PaymentDetails";
 import { inject, type Ref } from "vue";
+import TrustBadges from "./TrustBadges.vue";
 
 const paymentDetails = inject<Ref<PaymentDetails>>('paymentRequestDetails');
 </script>
