@@ -80,24 +80,16 @@
           <p class="qr-instructions-bold">Scan with your phone camera</p>
           <p class="qr-instructions">to confirm in your bank app.</p>
           <div class="qr-container">
-            <transition name="fade" mode="out-in">
-              <div v-if="isLoading" class="qr-code-placeholder">
-                <div class="loading-spinner"></div>
+            <div class="qrcode">
+              <div class="qrcode-svg-container">
+                <vue-qrcode :value="paymentUrl" tag="svg" :options="{
+                  errorCorrectionLevel: 'Q',
+                  width: 206,
+                  margin: 0,
+                }"></vue-qrcode>
               </div>
-              <div v-else class="qrcode">
-                <div :class="{ 'blur-qr': maxAttemptsReached }" class="qrcode-svg-container">
-                  <vue-qrcode :value="paymentUrl" tag="svg" :options="{
-                    errorCorrectionLevel: 'Q',
-                    width: 206,
-                    margin: 0,
-                  }"></vue-qrcode>
-                </div>
-                <button v-if="maxAttemptsReached" class="refresh-qr-button" @click="restartAuthUrlsTimer">
-                  Refresh QR
-                </button>
-                <img class="qrcode-mask-image" src="@/assets/images/atoa_logo_primary.svg" alt="Atoa Logo" />
-              </div>
-            </transition>
+              <img class="qrcode-mask-image" src="@/assets/images/atoa_logo_primary.svg" alt="Atoa Logo" />
+            </div>
           </div>
         </div>
         <div class="divider">
@@ -151,7 +143,7 @@ const paymentUrl = computed(() => {
 });
 const paymentAuthResponse = ref<PaymentAuthResponse | null>(null);
 const paymentIdempotencyId = inject<Ref<string | null>>('paymentIdempotencyId');
-const isLoading = ref(true);
+const isLoading = ref(false);
 const statusPollInterval = ref<number | null>(null);
 const paymentRequestStatusPollInterval = ref<number | null>(null);
 const authUrlPollInterval = ref<number | null>(null);
@@ -225,6 +217,10 @@ const fetchAuthorisationData = async () => {
 }
 
 const checkPaymentStatus = async () => {
+  if (!paymentAuthResponse.value?.paymentIdempotencyId) {
+    return;
+  }
+
   try {
     const transactionDetails = await paymentsService.getPaymentStatusByID(
       paymentAuthResponse?.value?.paymentIdempotencyId || "",
@@ -241,6 +237,10 @@ const checkPaymentStatus = async () => {
 };
 
 const checkPaymentRequestStatus = async () => {
+  if (!paymentRequestId) {
+    return;
+  }
+
   try {
     const paymentRequestStatusDetails = await paymentsService.getPaymentStatusByRequestId(
       paymentRequestId ?? "",
@@ -303,7 +303,7 @@ const resetPaymentPolling = () => {
 }
 
 onMounted(() => {
-  restartAuthUrlsTimer();
+  restartPaymentPolling();
 });
 
 onBeforeUnmount(() => {
@@ -476,38 +476,9 @@ onBeforeUnmount(() => {
   z-index: 5;
 }
 
-.blur-qr {
-  filter: blur(3px);
-}
-
 .qr-code :deep(svg) {
   width: 100%;
   height: 100%;
-}
-
-.qr-code-placeholder {
-  width: 225px;
-  height: 225px;
-  border-radius: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--grey-50);
-}
-
-.loading-spinner {
-  width: 40px;
-  height: 40px;
-  border: 4px solid var(--grey-200);
-  border-top-color: var(--primary-500);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
 }
 
 .divider {
@@ -546,13 +517,6 @@ onBeforeUnmount(() => {
 
 .bank-website-link-text:hover {
   opacity: 0.8;
-}
-
-.qr-error {
-  color: var(--primary-500);
-  font-size: 12px;
-  margin-top: 8px;
-  text-align: center;
 }
 
 .footer-section {
@@ -780,23 +744,5 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.refresh-qr-button {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: var(--base-black);
-  color: var(--base-white);
-  border: none;
-  border-radius: 8px;
-  padding: 16px;
-  font-size: 14px;
-  font-weight: 700;
-  cursor: pointer;
-  font-family: inherit;
-  box-sizing: border-box;
-  z-index: 10;
 }
 </style>
