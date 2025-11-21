@@ -303,7 +303,11 @@ const resetPaymentPolling = () => {
 }
 
 onMounted(() => {
-  restartPaymentPolling();
+  if (isMobile()) {
+    restartAuthUrlsTimer();
+  } else {
+    restartPaymentPolling();
+  }
 });
 
 onBeforeUnmount(() => {
