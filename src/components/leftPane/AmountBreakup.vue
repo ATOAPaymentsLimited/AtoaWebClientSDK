@@ -18,8 +18,8 @@
 </template>
 
 <script setup lang="ts">
-import type PaymentDetails from '@/core/types/PaymentDetails';
-import { computed, type PropType } from 'vue';
+import type PaymentDetails from "@/core/types/PaymentDetails";
+import { computed, type PropType } from "vue";
 
 const props = defineProps({
   isExpanded: {
@@ -34,7 +34,9 @@ const props = defineProps({
 
 const finalAmount = computed(() => {
   const originalAmount = props.paymentDetails?.amount?.amount ?? 0;
-  return Number(originalAmount - calculateServiceCharge.value - calculateTax.value);
+  return Number(
+    originalAmount - calculateServiceCharge.value - calculateTax.value,
+  );
 });
 
 const calculateServiceCharge = computed(() => {

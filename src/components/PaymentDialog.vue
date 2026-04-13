@@ -23,6 +23,7 @@ import type { ErrorEventHandler } from '@/core/types/SdkOptions';
 import { AtoaPayWebSDKError } from '@/core/types/Error';
 import type LastPaymentBankDetails from '@/core/types/LastPaymentBankDetails';
 import type CustomerDetails from '@/core/types/CustomerDetails';
+import { loadRapydCheckoutToolkit } from '@/core/utils/rapydLoader';
 
 const isFetchingInitialData = ref(true);
 const paymentRequestDetails = ref<PaymentDetails>();
@@ -40,11 +41,14 @@ const errorHandler = inject<ErrorEventHandler>('errorHandler');
 const width = ref(window.innerWidth);
 const isMobileWidth = computed(() => width.value < 1024);
 
+const rapydToolkitReady = ref(false);
+
 provide("isMobileWidth", isMobileWidth);
 provide('banksList', banksList);
 provide('paymentRequestDetails', paymentRequestDetails);
 provide('lastPaymentBankDetails', lastPaymentBankDetails);
 provide('paymentRequestFetchError', paymentRequestFetchError);
+provide('rapydToolkitReady', rapydToolkitReady);
 
 onMounted(() => {
   fetchPaymentRequestDetails();
@@ -68,6 +72,13 @@ async function fetchPaymentRequestDetails() {
     merchantBusinessName.value =
       paymentRequestResponseData.merchantBusinessName;
     lastPaymentBankDetails.value = paymentRequestResponseData.lastPaymentBankDetails;
+
+    // Preload Rapyd toolkit while user browses banks
+    if (paymentRequestResponseData.options?.cardPaymentEnabled) {
+      loadRapydCheckoutToolkit()
+        .then(() => { rapydToolkitReady.value = true; })
+        .catch((err) => { console.warn("[PaymentDialog] Rapyd toolkit preload failed:", err.message); });
+    }
   } catch (error) {
     if (errorHandler) {
       errorHandler(new AtoaPayWebSDKError(

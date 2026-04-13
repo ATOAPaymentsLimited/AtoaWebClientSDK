@@ -120,6 +120,77 @@ export class PaymentsService {
     });
   }
 
+  callCardAuthorisationUrl(
+    paymentRequestId: string | undefined,
+    paymentDetails: PaymentDetails
+  ): Promise<PaymentAuthResponse> {
+    let consumerId = paymentDetails?.consumerId;
+    if (!consumerId) {
+      consumerId = uuidv4();
+    }
+
+    const dataToSend = {
+      merchantId: paymentDetails?.merchantId,
+      businessId: paymentDetails?.merchantId,
+      employeeId: paymentDetails?.employeeId ?? null,
+      merchantName: paymentDetails?.merchantBusinessName,
+      consumerName: "",
+      amount: {
+        amount: paymentDetails?.amount?.amount,
+        currency: "GBP",
+      },
+      applicationUserId: consumerId ?? "",
+      consumerId: consumerId ?? "",
+      institutionId: "rapyd",
+      transactionType: "CARD",
+      taxPercentage: paymentDetails?.taxPercentage,
+      servicePercentage: paymentDetails?.servicePercentage,
+      features: ["CREATE_DOMESTIC_SINGLE_PAYMENT"],
+      paymentRequest: {
+        paymentType: paymentDetails?.paymentType,
+      },
+      encryptedPaymentDetails: paymentDetails?.encryptedPaymentDetails,
+      encryptedRefundPaymentDetails:
+        paymentDetails?.encryptedRefundPaymentDetails,
+      encryptedNotesDetails: paymentDetails?.encryptedNotesDetails ?? null,
+      encryptedQrDetails: paymentDetails?.encryptedQrDetails ?? null,
+      contextType: paymentDetails?.contextType,
+      paymentDevice: {
+        platform: navigator?.platform ?? null,
+        osVersion: null,
+        browser: detectBrowser(),
+        manufacturer: null,
+        model: null,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        deviceMemory: (navigator as any)?.deviceMemory ?? null,
+      },
+      deviceOrigin: isMobile() ? "SDK_MOBILE" : "SDK_DESKTOP",
+      paymentRequestSource: {
+        paymentRequestSourcetype: SourceTypeEnum["EXTERNAL_MERCHANT"],
+        paymentRequestId: paymentRequestId ?? null,
+        expiresIn: paymentDetails?.expiresIn?.toString(),
+        requestCreatedAt: paymentDetails?.requestCreatedAt?.toString(),
+        strictExpiry: paymentDetails?.strictExpiry?.toString(),
+        allowSdkRetry: paymentDetails?.allowSdkRetry?.toString(),
+        redirectOnCompleted: paymentDetails?.redirectOnCompleted?.toString(),
+        splitBill: paymentDetails?.splitBill,
+      },
+      merchantPaymentOptions: paymentDetails?.options,
+      paymentSourceType: SourceTypeEnum["EXTERNAL_MERCHANT"],
+      qrCodeDetails: paymentDetails?.qrDetails,
+      storeDetails: paymentDetails?.storeDetails,
+      fraudDetails: paymentDetails?.fraudDetails,
+    };
+
+    return apiCall<PaymentAuthResponse>(async () => {
+      return this.http.makeRequest({
+        url: api_urls.SECURE_PAYMENT_AUTH,
+        method: API_METHODS.POST,
+        json: dataToSend,
+      });
+    });
+  }
+
   getPaymentStatusByRequestId(
     paymentRequestId: string,
     params: { env: EnvironmentTypeEnum }

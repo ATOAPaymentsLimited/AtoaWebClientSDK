@@ -9,8 +9,11 @@
             </button>
           </div>
           <div v-if="!isFetchingInitialData" :key="currentView" class="sdk-right-pane-header-text">
-            <h2 v-if="currentView !== ViewType.PaymentStatusView">{{ viewTitleMap[currentView].title }}</h2>
-            <p v-else class="payment-details-header">{{ viewTitleMap[currentView].title }}</p>
+            <div class="header-title-row">
+              <h2 v-if="currentView !== ViewType.PaymentStatusView">{{ viewTitleMap[currentView].title }}</h2>
+              <p v-else class="payment-details-header">{{ viewTitleMap[currentView].title }}</p>
+              <QuickSecureChip v-if="currentView === ViewType.SelectBankView" />
+            </div>
             <p v-if="viewTitleMap[currentView].showTimestamp" class="payment-timestamp">{{ formattedTimestamp }}</p>
           </div>
         </div>
@@ -42,7 +45,15 @@
 
             <div v-else-if="currentView === ViewType.SelectBankView" class="view-container-flex">
               <SelectBank v-on:select-bank="handleOnBankSelect" :selected-bank-id="selectedBank?.id"
-                @show-overlay="handleShowOverlay" />
+                @show-overlay="handleShowOverlay" @select-card="handleOnCardSelect" />
+            </div>
+
+            <div v-else-if="currentView === ViewType.CardCheckoutView" class="view-container-flex">
+              <CardCheckout
+                @payment-success="handleCardPaymentSuccess"
+                @payment-failure="handleCardPaymentFailure"
+                @checkout-closed="handleCardCheckoutClosed"
+              />
             </div>
 
             <div v-else-if="currentView === ViewType.PaymentOptionsView" class="view-container-flex">
@@ -79,7 +90,7 @@
       <CancellationDialog :show="showCancellationDialog" @dismiss="showCancellationDialog = false"
         @confirm="confirmClose" :is-pending="showPendingCancellationDialog" />
 
-      <div class="sdk-right-pane-footer" v-if="currentView === ViewType.ExplainerView">
+      <div class="sdk-right-pane-footer" v-if="currentView === ViewType.ExplainerView && !isCardOnlyFlow">
           <button class="continue-button" :style="{
             background: paymentDetails?.merchantThemeDetails?.colorCode,
             color: paymentDetails?.merchantThemeDetails?.foregroundColor,
@@ -98,10 +109,12 @@ import ExplainerUI from '@/components/rightPane/explainer/ExplainerUI.vue'
 import SelectBank from '@/components/rightPane/selectBank/SelectBank.vue'
 import Shimmer from "@/components/sharedComponents/Shimmer.vue";
 import atoaPrimaryLogo from "@/assets/images/atoa_logo_primary.svg";
+import QuickSecureChip from "@/components/sharedComponents/QuickSecureChip.vue";
 import type BankData from '@/core/types/BankData'
 import PaymentOptions from '@/components/rightPane/paymentOptions/PaymentOptions.vue'
 import PaymentVerification from '@/components/rightPane/paymentVerification/PaymentVerification.vue'
 import PaymentStatus from '@/components/rightPane/paymentStatus/PaymentStatus.vue'
+import CardCheckout from '@/components/rightPane/cardCheckout/CardCheckout.vue'
 import type PaymentDetails from '@/core/types/PaymentDetails'
 import CancellationDialog from '@/components/rightPane/CancellationDialog.vue'
 import { ViewType } from '@/core/types/ViewTypeEnum'
@@ -126,7 +139,10 @@ const viewTitleMap: Record<ViewType, ViewConfig> = {
     title: 'How to pay with bank app?',
   },
   [ViewType.SelectBankView]: {
-    title: 'Select your bank to continue',
+    title: 'Pay by bank',
+  },
+  [ViewType.CardCheckoutView]: {
+    title: 'Pay by card',
   },
   [ViewType.PaymentOptionsView]: {
     title: 'Scan to pay',
@@ -149,7 +165,15 @@ const paymentRequestFetchError = inject<Ref<Failure | null>>('paymentRequestFetc
 const isMobileWidth = inject<ComputedRef<boolean>>('isMobileWidth');
 
 const views = ViewType.values();
-const currentView = ref<ViewType>(ViewType.SelectBankView)
+
+// Determine initial view: card-only flow skips to CardCheckoutView
+const getInitialView = (): ViewType => {
+  if (paymentDetails?.value?.paymentMethod === 'CARD') {
+    return ViewType.CardCheckoutView;
+  }
+  return ViewType.SelectBankView;
+};
+const currentView = ref<ViewType>(getInitialView())
 const selectedBank = ref<BankData | null>();
 const showDisabledBankOverlay = ref(false);
 const disabledBank = ref<BankData | null>(null);
@@ -161,8 +185,14 @@ const pageAnimationDirection = ref<'forward' | 'backward'>('forward');
 
 provide('paymentIdempotencyId', paymentIdempotencyId);
 
+const isCardOnlyFlow = computed(() => {
+  return paymentDetails?.value?.paymentMethod === 'CARD';
+});
+
 const showBackButton = computed(
-  () => currentView.value === ViewType.PaymentOptionsView || currentView.value === ViewType.PaymentInProgressView
+  () => currentView.value === ViewType.PaymentOptionsView
+    || currentView.value === ViewType.PaymentInProgressView
+    || (currentView.value === ViewType.CardCheckoutView && !isCardOnlyFlow.value)
 );
 
 const isPending = computed(() => {
@@ -171,11 +201,23 @@ const isPending = computed(() => {
 });
 
 const goToPreviousView = () => {
+  // Card checkout back button goes to SelectBankView
+  if (currentView.value === ViewType.CardCheckoutView) {
+    handleCardCheckoutClosed();
+    return;
+  }
+
   const currentIndex = views.indexOf(currentView.value);
-  if (currentIndex < views.length - 1) {
+  if (currentIndex > 0) {
     pageAnimationDirection.value = 'backward';
-    const previousView = views[currentIndex - 1];
-    setCurrentView(previousView);
+    let previousIndex = currentIndex - 1;
+    // Skip CardCheckoutView when going back from bank payment flow
+    if (views[previousIndex] === ViewType.CardCheckoutView) {
+      previousIndex--;
+    }
+    if (previousIndex >= 0) {
+      setCurrentView(views[previousIndex]);
+    }
   }
 };
 
@@ -229,6 +271,39 @@ const handleOnBankSelect = (bank: BankData) => {
   selectedBank.value = bank;
   pageAnimationDirection.value = 'forward';
   setCurrentView(ViewType.PaymentOptionsView);
+};
+
+const handleOnCardSelect = () => {
+  pageAnimationDirection.value = 'forward';
+  setCurrentView(ViewType.CardCheckoutView);
+};
+
+const handleCardPaymentSuccess = (data: { paymentIdempotencyId: string }) => {
+  paymentIdempotencyId.value = data.paymentIdempotencyId;
+  showPendingCancellationDialog = true;
+  pageAnimationDirection.value = 'forward';
+  setCurrentView(ViewType.PaymentStatusView);
+};
+
+const handleCardPaymentFailure = (data: { paymentIdempotencyId?: string; error?: string }) => {
+  if (data.paymentIdempotencyId) {
+    paymentIdempotencyId.value = data.paymentIdempotencyId;
+    showPendingCancellationDialog = true;
+    pageAnimationDirection.value = 'forward';
+    setCurrentView(ViewType.PaymentStatusView);
+  }
+  // If no idempotencyId, CardCheckout shows its own inline error with retry
+};
+
+const handleCardCheckoutClosed = () => {
+  if (isCardOnlyFlow.value) {
+    // Card-only flow: closing means cancelling
+    cancelPaymentHandler?.(paymentRequestId ?? '');
+  } else {
+    // Card-as-option: go back to bank selection
+    pageAnimationDirection.value = 'backward';
+    setCurrentView(ViewType.SelectBankView);
+  }
 };
 
 const handleStatusChange = (data: DialogCloseEventData) => {
@@ -363,12 +438,19 @@ const closeOverlay = () => {
   background-color: var(--grey-200);
 }
 
+.header-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .sdk-right-pane-header-text h2 {
   font-size: 16px;
   font-weight: 700;
   margin: 0;
   color: var(--base-black);
 }
+
 
 .view-content {
   position: relative;
@@ -394,14 +476,9 @@ const closeOverlay = () => {
   padding-right: 16px;
 }
 
-/* Default hidden scrollbar for SelectBankView */
+/* SelectBankView: prevent outer scroll so sticky card section works */
 .view.selectBankView {
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE and Edge */
-}
-
-.view.selectBankView::-webkit-scrollbar {
-  display: none; /* Chrome, Safari and Opera */
+  overflow: hidden;
 }
 
 .view:not(.selectBankView)::-webkit-scrollbar {

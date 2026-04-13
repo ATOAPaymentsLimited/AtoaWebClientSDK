@@ -50,12 +50,36 @@
           @show-overlay="(bankData) => emit('showOverlay', bankData)" />
       </div>
     </div>
+
+    <div v-if="cardPaymentEnabled" class="pay-by-card-section">
+      <div class="pay-by-card-button" @click="emit('selectCard')">
+        <span class="pay-by-card-text">Card payment options</span>
+        <div class="card-icons-container">
+          <div class="card-icon-badge">
+            <img :src="mastercardIcon" alt="Mastercard" />
+          </div>
+          <div class="card-icon-badge">
+            <img :src="visaIcon" alt="Visa" />
+          </div>
+          <div class="card-icon-badge">
+            <img :src="googlePayIcon" alt="Google Pay" />
+          </div>
+          <div class="card-icon-badge">
+            <img :src="applePayIcon" alt="Apple Pay" />
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { inject, onMounted, ref, watch, type ComputedRef, type Ref } from 'vue';
+import { computed, inject, onMounted, ref, watch, type ComputedRef, type Ref } from 'vue';
 import searchIcon from '@/assets/images/icon_search.svg';
+import mastercardIcon from '@/assets/images/card_mastercard.svg';
+import visaIcon from '@/assets/images/card_visa.svg';
+import googlePayIcon from '@/assets/images/card_google_pay.svg';
+import applePayIcon from '@/assets/images/card_apple_pay.svg';
 import { PaymentsService } from '@/core/services/PaymentsService';
 import type BankData from '@/core/types/BankData';
 import BankTabs from '@/components/rightPane/selectBank/BankTabs.vue';
@@ -69,6 +93,7 @@ import { DEFAULT_TRANSACTION_LIMIT } from '@/core/utils/constants';
 
 const emit = defineEmits<{
   (e: 'selectBank', bank: BankData): void,
+  (e: 'selectCard'): void,
   (e: 'showOverlay', bank: BankData): void
 }>();
 
@@ -91,6 +116,7 @@ const paymentDetails = inject<Ref<PaymentDetails>>('paymentRequestDetails');
 const environment = inject<EnvironmentTypeEnum>('environment');
 const isMobileWidth = inject<ComputedRef<boolean>>('isMobileWidth');
 const paymentsService = new PaymentsService();
+const cardPaymentEnabled = computed(() => !!paymentDetails?.value?.options?.cardPaymentEnabled);
 
 if (lastPaymentBankDetails) {
   watch(lastPaymentBankDetails, (newValue) => {
@@ -295,7 +321,7 @@ function handlePreselectedBank() {
   flex-direction: column;
   overflow-y: auto; /* Use auto for natural scrollbar behavior */
   padding-right: 24px;
-  padding-bottom: 24px;
+  padding-bottom: 8px;
   margin-right: 8px;
   position: relative;
 
@@ -424,4 +450,65 @@ function handlePreselectedBank() {
   opacity: 0;
   transform: translateY(-20px);
 }
+
+.pay-by-card-section {
+  flex-shrink: 0;
+  padding-top: 12px;
+  padding-right: 36px;
+}
+
+@media (max-width: 1024px) {
+  .pay-by-card-section {
+    padding-right: 0;
+  }
+}
+
+.pay-by-card-button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 12px;
+  background: white;
+  border: 1px solid var(--grey-200);
+  border-radius: 12px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background-color 0.2s;
+  box-sizing: border-box;
+}
+
+.pay-by-card-button:hover {
+  background: var(--grey-50);
+}
+
+.card-icons-container {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.card-icon-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 24px;
+  border: 1.5px solid var(--grey-200);
+  border-radius: 4.8px;
+  overflow: hidden;
+}
+
+.card-icon-badge img {
+  max-width: 80%;
+  max-height: 70%;
+  object-fit: contain;
+}
+
+.pay-by-card-text {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--grey-700);
+}
+
 </style>

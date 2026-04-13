@@ -1,6 +1,7 @@
 export enum ViewType {
   ExplainerView = "ExplainerView",
   SelectBankView = "SelectBankView",
+  CardCheckoutView = "CardCheckoutView",
   PaymentOptionsView = "PaymentOptionsView",
   PaymentInProgressView = "PaymentInProgressView",
   PaymentStatusView = "PaymentStatusView",
