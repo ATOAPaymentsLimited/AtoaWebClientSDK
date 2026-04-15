@@ -4,7 +4,12 @@ import { apiCall, api_urls } from "@/core/utils/http-utils";
 import type PaymentDetails from "@/core/types/PaymentDetails";
 import type BankData from "@/core/types/BankData";
 import { detectBrowser, isMobile } from "@/core/utils/common";
-import { SourceTypeEnum } from "@/core/types/common";
+import {
+  InstitutionIdEnum,
+  PaymentDeviceOriginEnum,
+  SourceTypeEnum,
+  TransactionTypeEnum,
+} from "@/core/types/common";
 import type PaymentAuthResponse from "@/core/types/PaymentAuthResponse";
 import type CustomerDetails from "@/core/types/CustomerDetails";
 import { v4 as uuidv4 } from "uuid";
@@ -18,7 +23,9 @@ export class PaymentsService {
     this.http = httpClient ?? new ApiClient();
   }
 
-  async fetchConsumerBankInstitutions(params: {env: EnvironmentTypeEnum}): Promise<BankData[]> {
+  async fetchConsumerBankInstitutions(params: {
+    env: EnvironmentTypeEnum;
+  }): Promise<BankData[]> {
     return apiCall<BankData[]>(async () => {
       return this.http.makeRequest({
         url: api_urls.GET_BANK_INSTITUTIONS,
@@ -30,7 +37,7 @@ export class PaymentsService {
 
   fetchPaymentDetails(
     paymentRequestId: string,
-    params: { env: EnvironmentTypeEnum; customerDetails?: CustomerDetails }
+    params: { env: EnvironmentTypeEnum; customerDetails?: CustomerDetails },
   ): Promise<PaymentDetails> {
     return apiCall<PaymentDetails>(async () => {
       const paramsLocal: { env: EnvironmentTypeEnum } = {
@@ -53,7 +60,7 @@ export class PaymentsService {
   callBankAuthorisationUrl(
     paymentRequestId: string | undefined,
     paymentDetails: PaymentDetails,
-    selectedBank: BankData
+    selectedBank: BankData,
   ): Promise<PaymentAuthResponse> {
     let consumerId = paymentDetails?.consumerId;
     if (!consumerId) {
@@ -93,7 +100,9 @@ export class PaymentsService {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         deviceMemory: (navigator as any)?.deviceMemory ?? null,
       },
-      deviceOrigin: isMobile() ? "SDK_MOBILE" : "SDK_DESKTOP",
+      deviceOrigin: isMobile()
+        ? PaymentDeviceOriginEnum.SDK_MOBILE
+        : PaymentDeviceOriginEnum.SDK_DESKTOP,
       paymentRequestSource: {
         paymentRequestSourcetype: SourceTypeEnum["EXTERNAL_MERCHANT"],
         paymentRequestId: paymentRequestId ?? null,
@@ -122,7 +131,7 @@ export class PaymentsService {
 
   callCardAuthorisationUrl(
     paymentRequestId: string | undefined,
-    paymentDetails: PaymentDetails
+    paymentDetails: PaymentDetails,
   ): Promise<PaymentAuthResponse> {
     let consumerId = paymentDetails?.consumerId;
     if (!consumerId) {
@@ -141,8 +150,8 @@ export class PaymentsService {
       },
       applicationUserId: consumerId ?? "",
       consumerId: consumerId ?? "",
-      institutionId: "rapyd",
-      transactionType: "CARD",
+      institutionId: InstitutionIdEnum.RAPYD,
+      transactionType: TransactionTypeEnum.CARD,
       taxPercentage: paymentDetails?.taxPercentage,
       servicePercentage: paymentDetails?.servicePercentage,
       features: ["CREATE_DOMESTIC_SINGLE_PAYMENT"],
@@ -164,7 +173,9 @@ export class PaymentsService {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         deviceMemory: (navigator as any)?.deviceMemory ?? null,
       },
-      deviceOrigin: isMobile() ? "SDK_MOBILE" : "SDK_DESKTOP",
+      deviceOrigin: isMobile()
+        ? PaymentDeviceOriginEnum.SDK_MOBILE
+        : PaymentDeviceOriginEnum.SDK_DESKTOP,
       paymentRequestSource: {
         paymentRequestSourcetype: SourceTypeEnum["EXTERNAL_MERCHANT"],
         paymentRequestId: paymentRequestId ?? null,
@@ -193,14 +204,17 @@ export class PaymentsService {
 
   getPaymentStatusByRequestId(
     paymentRequestId: string,
-    params: { env: EnvironmentTypeEnum }
+    params: { env: EnvironmentTypeEnum },
   ): Promise<PaymentRequestStatusDetails> {
     return apiCall<PaymentRequestStatusDetails>(async () => {
       const paramsLocal: { env: EnvironmentTypeEnum } = {
         env: params.env.toLowerCase() as EnvironmentTypeEnum,
       };
       return this.http.makeRequest({
-        url: api_urls.GET_PAYMENT_STATUS_BY_REQUEST_ID.replace("$id", paymentRequestId),
+        url: api_urls.GET_PAYMENT_STATUS_BY_REQUEST_ID.replace(
+          "$id",
+          paymentRequestId,
+        ),
         method: API_METHODS.GET,
         params: paramsLocal,
       });
@@ -209,7 +223,7 @@ export class PaymentsService {
 
   getPaymentStatusByID(
     paymentIdempotencyId: string,
-    params: { env: EnvironmentTypeEnum }
+    params: { env: EnvironmentTypeEnum },
   ): Promise<TransactionDetails> {
     return apiCall<TransactionDetails>(async () => {
       const paramsLocal: { env: EnvironmentTypeEnum } = {

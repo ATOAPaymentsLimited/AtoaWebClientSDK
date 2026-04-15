@@ -135,7 +135,6 @@ function watchForRapydIframe() {
       // Move iframe from external staging into shadow DOM placeholder
       rapydPlaceholderRef.value.appendChild(iframe);
       isIframeReady.value = true;
-      console.log("[CardCheckout] Rapyd iframe moved into shadow DOM");
 
       // Clean up the now-empty staging div
       removeExternalRapydContainer();
@@ -158,18 +157,10 @@ async function initialize() {
   try {
     // Use preloaded toolkit if available, otherwise load it now
     if (!rapydToolkitReady?.value) {
-      console.log("[CardCheckout] Loading Rapyd toolkit...", { url: import.meta.env.VITE_RAPYD_TOOLKIT_URL });
       await loadRapydCheckoutToolkit();
       if (rapydToolkitReady) rapydToolkitReady.value = true;
     }
-    console.log("[CardCheckout] Rapyd toolkit ready");
 
-    console.log("[CardCheckout] Fetching card checkout details...", {
-      paymentRequestId,
-      hasPaymentDetails: !!paymentDetails?.value,
-      merchantId: paymentDetails?.value?.merchantId,
-      cardPaymentEnabled: paymentDetails?.value?.options?.cardPaymentEnabled,
-    });
     await fetchCardCheckoutDetails();
   } catch (error) {
     console.error("[CardCheckout] Initialize failed:", error);
@@ -191,12 +182,6 @@ async function fetchCardCheckoutDetails() {
       paymentRequestId,
       paymentDetails.value
     );
-    console.log("[CardCheckout] Card auth response:", {
-      cardCheckoutId: response.cardCheckoutId,
-      paymentIdempotencyId: response.paymentIdempotencyId,
-      status: response.status,
-    });
-
     if (response.cardCheckoutId) {
       cardAuthResponse.value = response;
       cardCheckoutId.value = response.cardCheckoutId;
@@ -239,11 +224,6 @@ function removeRapydEventListeners() {
 }
 
 function initializePayment() {
-  console.log("[CardCheckout] initializePayment", {
-    cardCheckoutId: cardCheckoutId.value,
-    rapydToolkitLoaded: !!window.RapydCheckoutToolkit,
-    amount: paymentDetails?.value?.amount?.amount,
-  });
   if (!cardCheckoutId.value || !window.RapydCheckoutToolkit) return;
 
   try {
@@ -267,7 +247,6 @@ function initializePayment() {
       },
     });
     rapydCheckout.value.displayCheckout();
-    console.log("[CardCheckout] Rapyd checkout displayed, waiting for iframe...");
   } catch (error) {
     console.error("[CardCheckout] initializePayment failed:", error);
     removeExternalRapydContainer();
@@ -451,6 +430,13 @@ onBeforeUnmount(() => {
   stopPolling();
   removeRapydEventListeners();
   removeExternalRapydContainer();
+
+  // Clean up any iframe that was moved into shadow DOM placeholder
+  if (rapydPlaceholderRef.value) {
+    while (rapydPlaceholderRef.value.firstChild) {
+      rapydPlaceholderRef.value.removeChild(rapydPlaceholderRef.value.firstChild);
+    }
+  }
 
   if (rapydCheckout.value) {
     try {
