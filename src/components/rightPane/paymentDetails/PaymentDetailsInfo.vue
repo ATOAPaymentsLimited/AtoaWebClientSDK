@@ -9,9 +9,16 @@
       <div class="reference-row">
         <div class="value-container">
           <div class="label-text">Reference ID</div>
-          <div class="value-text">{{ transactionDetails?.paymentIdempotencyId }}</div>
+          <div class="value-text">
+            {{ transactionDetails?.paymentIdempotencyId }}
+          </div>
         </div>
-        <button class="copy-button" @click="copyToClipboard(transactionDetails?.paymentIdempotencyId ?? '')">
+        <button
+          class="copy-button"
+          @click="
+            copyToClipboard(transactionDetails?.paymentIdempotencyId ?? '')
+          "
+        >
           <img src="@/assets/images/icon_copy.svg" alt="Copy" />
         </button>
       </div>
@@ -21,7 +28,10 @@
           <div class="label-text">Order ID</div>
           <div class="value-text">{{ transactionDetails?.orderId }}</div>
         </div>
-        <button class="copy-button" @click="copyToClipboard(transactionDetails?.orderId ?? '')">
+        <button
+          class="copy-button"
+          @click="copyToClipboard(transactionDetails?.orderId ?? '')"
+        >
           <img src="@/assets/images/icon_copy.svg" alt="Copy" />
         </button>
       </div>
@@ -30,11 +40,11 @@
 </template>
 
 <script setup lang="ts">
-import { AtoaPayWebSDKError } from '@/core/types/Error';
-import type { ErrorEventHandler } from '@/core/types/SdkOptions';
-import type TransactionDetails from '@/core/types/TransactionDetails';
-import type { Failure } from '@/core/utils/http-utils';
-import { inject, type PropType } from 'vue';
+import { AtoaPayWebSDKError } from "@/core/types/Error";
+import type { ErrorEventHandler } from "@/core/types/SdkOptions";
+import type TransactionDetails from "@/core/types/TransactionDetails";
+import type { Failure } from "@/core/utils/http-utils";
+import { inject, type PropType } from "vue";
 
 defineProps({
   transactionDetails: {
@@ -43,7 +53,7 @@ defineProps({
   },
 });
 
-const errorHandler = inject<ErrorEventHandler>('errorHandler');
+const errorHandler = inject<ErrorEventHandler>("errorHandler");
 
 const copyToClipboard = async (text?: string) => {
   if (!text) return;
@@ -52,14 +62,13 @@ const copyToClipboard = async (text?: string) => {
     await navigator.clipboard.writeText(text);
   } catch (error) {
     if (errorHandler) {
-      errorHandler(new AtoaPayWebSDKError(
-        `Failed to copy text`,
-        {
-          componentName: 'PaymentDetailsInfo',
+      errorHandler(
+        new AtoaPayWebSDKError(`[Atoa Web SDK] Failed to copy text`, {
+          componentName: "PaymentDetailsInfo",
           errorName: (error as Failure).name,
           errorMessage: (error as Failure).message,
-        },
-      ));
+        }),
+      );
     }
   }
 };
@@ -126,7 +135,11 @@ const copyToClipboard = async (text?: string) => {
   gap: 16px;
   border-top: none;
   padding-top: 20px;
-  background-image: linear-gradient(to right, var(--grey-200) 2px, transparent 2px);
+  background-image: linear-gradient(
+    to right,
+    var(--grey-200) 2px,
+    transparent 2px
+  );
   background-size: 6px 2px;
   background-repeat: repeat-x;
 }

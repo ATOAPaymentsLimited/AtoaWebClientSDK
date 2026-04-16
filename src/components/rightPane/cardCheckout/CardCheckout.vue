@@ -1,41 +1,68 @@
 <template>
-  <div class="card-checkout" ref="cardCheckoutRef">
-    <div v-if="isLoading || (!isIframeReady && !showCardError && !authError)" class="card-loading-container">
+  <div class="card-checkout">
+    <div
+      v-if="isLoading || authError"
+      class="card-loading-container"
+    >
       <div v-if="!authError" class="loading-state">
-        <img src="https://atoa-gifs.s3.eu-west-2.amazonaws.com/animated_grid.gif" alt="Loading" class="loading-animation">
+        <img
+          src="https://atoa-gifs.s3.eu-west-2.amazonaws.com/animated_grid.gif"
+          alt="Loading"
+          class="loading-animation"
+        />
         <p class="loading-text">Loading card payment</p>
       </div>
       <div v-else class="error-state">
-        <img src="@/assets/images/icon_warning_black.svg" alt="Error" class="error-icon" />
+        <img
+          src="@/assets/images/icon_warning_black.svg"
+          alt="Error"
+          class="error-icon"
+        />
         <p class="error-title">Something went wrong</p>
-        <p class="error-message">Unable to load card payment. Please try again.</p>
+        <p class="error-message">
+          Unable to load card payment. Please try again.
+        </p>
         <button class="retry-button" @click="handleRetry">Retry</button>
       </div>
     </div>
 
     <div v-if="showCardError" class="error-state">
-      <img src="@/assets/images/icon_warning_black.svg" alt="Error" class="error-icon" />
+      <img
+        src="@/assets/images/icon_warning_black.svg"
+        alt="Error"
+        class="error-icon"
+      />
       <p class="error-title">Payment failed</p>
-      <p class="error-message">Your card payment could not be processed. Please try again.</p>
+      <p class="error-message">
+        Your card payment could not be processed. Please try again.
+      </p>
       <button class="retry-button" @click="handleRetry">Try again</button>
     </div>
 
     <!-- Pay by bank upsell banner -->
-    <div v-if="isIframeReady && !showCardError && !isIn3dsFlow && !isCardOnlyFlow" class="pay-by-bank-banner">
+    <div
+      v-if="isIframeReady && !isLoading && !showCardError && !isIn3dsFlow && !isCardOnlyFlow"
+      class="pay-by-bank-banner"
+    >
       <img :src="quickModeIcon" alt="" class="banner-icon" />
       <div class="banner-content">
         <div class="banner-text">
           <p class="banner-title">Pay by bank instead for quick payment?</p>
-          <p class="banner-description">Pay with Bank App instead for a fast, secure checkout that helps {{ merchantName }} save on fees.</p>
+          <p class="banner-description">
+            Pay with Bank App instead for a fast, secure checkout that helps
+            {{ merchantName }} save on fees.
+          </p>
         </div>
-        <button class="banner-button" @click="emit('checkout-closed')">Switch to pay by bank</button>
+        <button class="banner-button" @click="emit('checkout-closed')">
+          Switch to pay by bank
+        </button>
       </div>
     </div>
 
     <!-- Placeholder: the actual Rapyd iframe renders in a div on document.body
          because the SDK uses Shadow DOM and Rapyd can't find elements inside it -->
     <div
-      v-show="isIframeReady && !showCardError"
+      v-show="isIframeReady && !isLoading && !showCardError"
       ref="rapydPlaceholderRef"
       class="rapyd-checkout-container"
       :class="{ 'iframe-constrained': isIn3dsFlow }"
@@ -44,7 +71,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, inject, onMounted, onBeforeUnmount, watch, nextTick, type Ref } from "vue";
+import {
+  ref,
+  computed,
+  inject,
+  onMounted,
+  onBeforeUnmount,
+  watch,
+  nextTick,
+  type Ref,
+} from "vue";
 import { PaymentsService } from "@/core/services/PaymentsService";
 import { loadRapydCheckoutToolkit } from "@/core/utils/rapydLoader";
 import { EnvironmentTypeEnum } from "@/core/types/Environment";
@@ -60,22 +96,29 @@ const MAX_POLLING_ATTEMPTS = 450; // 15 minutes
 
 const emit = defineEmits<{
   (e: "payment-success", data: { paymentIdempotencyId: string }): void;
-  (e: "payment-failure", data: { paymentIdempotencyId?: string; error?: string }): void;
+  (
+    e: "payment-failure",
+    data: { paymentIdempotencyId?: string; error?: string },
+  ): void;
   (e: "checkout-closed"): void;
 }>();
 
 const paymentRequestId = inject<string>("paymentRequestId");
 const paymentDetails = inject<Ref<PaymentDetails>>("paymentRequestDetails");
-const environment = inject<EnvironmentTypeEnum>("environment") ?? EnvironmentTypeEnum.PRODUCTION;
+const environment =
+  inject<EnvironmentTypeEnum>("environment") ?? EnvironmentTypeEnum.PRODUCTION;
 const rapydToolkitReady = inject<Ref<boolean>>("rapydToolkitReady");
 const errorHandler = inject<ErrorEventHandler>("errorHandler");
 
-const merchantName = computed(() => paymentDetails?.value?.merchantBusinessName || "the merchant");
-const isCardOnlyFlow = computed(() => paymentDetails?.value?.paymentMethod === "CARD");
+const merchantName = computed(
+  () => paymentDetails?.value?.merchantBusinessName || "the merchant",
+);
+const isCardOnlyFlow = computed(
+  () => paymentDetails?.value?.paymentMethod === "CARD",
+);
 
 const paymentsService = new PaymentsService();
 
-const cardCheckoutRef = ref<HTMLElement | null>(null);
 const rapydPlaceholderRef = ref<HTMLElement | null>(null);
 const isLoading = ref(true);
 const authError = ref(false);
@@ -99,7 +142,8 @@ function createExternalRapydContainer() {
   externalRapydContainer = document.createElement("div");
   externalRapydContainer.id = "rapyd-checkout";
   // Hidden staging area — Rapyd needs this in the light DOM to find it
-  externalRapydContainer.style.cssText = "position: fixed; top: -9999px; left: -9999px; width: 400px;";
+  externalRapydContainer.style.cssText =
+    "position: fixed; top: -9999px; left: -9999px; width: 400px;";
   document.body.appendChild(externalRapydContainer);
 }
 
@@ -163,47 +207,71 @@ async function initialize() {
 
     await fetchCardCheckoutDetails();
   } catch (error) {
-    console.error("[CardCheckout] Initialize failed:", error);
+    if (errorHandler) {
+      errorHandler(
+        new AtoaPayWebSDKError(
+          "[Atoa Web SDK] Card checkout initialization failed",
+          {
+            componentName: "CardCheckout",
+            errorMessage: (error as Error).message,
+          },
+        ),
+      );
+    }
     authError.value = true;
-    isLoading.value = true;
+    isLoading.value = false;
   }
 }
 
 async function fetchCardCheckoutDetails() {
   if (!paymentDetails?.value) {
-    console.error("[CardCheckout] No payment details available");
+    if (errorHandler) {
+      errorHandler(
+        new AtoaPayWebSDKError("[Atoa Web SDK] No payment details available", {
+          componentName: "CardCheckout",
+        }),
+      );
+    }
     authError.value = true;
-    isLoading.value = true;
+    isLoading.value = false;
     return;
   }
 
   try {
     const response = await paymentsService.callCardAuthorisationUrl(
       paymentRequestId,
-      paymentDetails.value
+      paymentDetails.value,
     );
     if (response.cardCheckoutId) {
       cardAuthResponse.value = response;
       cardCheckoutId.value = response.cardCheckoutId;
       isLoading.value = false;
     } else {
-      throw new Error("No cardCheckoutId in response — merchant may not have card payments enabled");
+      throw new Error(
+        "No cardCheckoutId in response — merchant may not have card payments enabled",
+      );
     }
   } catch (error) {
-    console.error("[CardCheckout] fetchCardCheckoutDetails failed:", error);
-
-    if (error instanceof Failure && error.name === "REQUEST_TIMEOUT") {
-      if (errorHandler) {
-        errorHandler(new AtoaPayWebSDKError(error.message, {
-          errorName: error.name,
-          statusCode: error.statusCode,
-          redirectUrl: error.redirectUrl,
-        }));
+    if (errorHandler) {
+      const details: Record<string, unknown> = {
+        componentName: "CardCheckout",
+        errorMessage: (error as Error).message,
+      };
+      if (error instanceof Failure) {
+        details.errorName = error.name;
+        details.statusCode = error.statusCode;
+        details.redirectUrl = error.redirectUrl;
       }
+      errorHandler(
+        new AtoaPayWebSDKError(
+          "[Atoa Web SDK] Card authorization failed",
+          details,
+        ),
+      );
     }
 
     authError.value = true;
-    isLoading.value = true;
+    isLoading.value = false;
   }
 }
 
@@ -211,7 +279,10 @@ function setupRapydEventListeners() {
   window.addEventListener("onLoading", handleRapydLoading);
   window.addEventListener("onCheckoutPaymentSuccess", handlePaymentSuccess);
   window.addEventListener("onCheckoutFailure", handlePaymentFailure);
-  window.addEventListener("onCheckoutPaymentFailure", handlePaymentFailureRedirect);
+  window.addEventListener(
+    "onCheckoutPaymentFailure",
+    handlePaymentFailureRedirect,
+  );
   window.addEventListener("onCheckoutPaymentPending", handlePaymentPending);
 }
 
@@ -219,12 +290,16 @@ function removeRapydEventListeners() {
   window.removeEventListener("onLoading", handleRapydLoading);
   window.removeEventListener("onCheckoutPaymentSuccess", handlePaymentSuccess);
   window.removeEventListener("onCheckoutFailure", handlePaymentFailure);
-  window.removeEventListener("onCheckoutPaymentFailure", handlePaymentFailureRedirect);
+  window.removeEventListener(
+    "onCheckoutPaymentFailure",
+    handlePaymentFailureRedirect,
+  );
   window.removeEventListener("onCheckoutPaymentPending", handlePaymentPending);
 }
 
 function initializePayment() {
   if (!cardCheckoutId.value || !window.RapydCheckoutToolkit) return;
+  isLoading.value = true;
 
   try {
     // Create a temporary staging div in the light DOM for Rapyd to find
@@ -248,19 +323,33 @@ function initializePayment() {
     });
     rapydCheckout.value.displayCheckout();
   } catch (error) {
-    console.error("[CardCheckout] initializePayment failed:", error);
+    if (errorHandler) {
+      errorHandler(
+        new AtoaPayWebSDKError(
+          "[Atoa Web SDK] Card payment initialization failed",
+          {
+            componentName: "CardCheckout",
+            errorMessage: (error as Error).message,
+          },
+        ),
+      );
+    }
     removeExternalRapydContainer();
     authError.value = true;
-    isLoading.value = true;
+    isLoading.value = false;
   }
 }
 
 // --- Rapyd event handlers ---
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function handleRapydLoading(_event: any) {
-  // Rapyd toolkit reports its internal loading state — currently unused
-  // since we manage our own loading state via isLoading ref
+function handleRapydLoading(event: any) {
+  if (isLoading.value) {
+    isLoading.value = event.detail.loading;
+  } else {
+    setTimeout(() => {
+      isLoading.value = event.detail.loading;
+    }, 250);
+  }
 }
 
 function handlePaymentSuccess(event: any) {
@@ -276,22 +365,28 @@ function handlePaymentSuccess(event: any) {
 function handlePaymentFailure(event: any) {
   stopPolling();
   removeExternalRapydContainer();
-  console.error("[CardCheckout] onCheckoutFailure:", {
-    detail: event.detail,
-    isTrusted: event.isTrusted,
-    error: event.detail?.error,
-  });
+  if (errorHandler) {
+    errorHandler(
+      new AtoaPayWebSDKError("[Atoa Web SDK] Card checkout failure", {
+        componentName: "CardCheckout",
+        error: event.detail?.error,
+      }),
+    );
+  }
   showCardError.value = true;
 }
 
 function handlePaymentFailureRedirect(event: any) {
   stopPolling();
   removeExternalRapydContainer();
-  console.error("[CardCheckout] onCheckoutPaymentFailure:", {
-    detail: event.detail,
-    isTrusted: event.isTrusted,
-    error: event.detail?.error,
-  });
+  if (errorHandler) {
+    errorHandler(
+      new AtoaPayWebSDKError("[Atoa Web SDK] Card payment failed", {
+        componentName: "CardCheckout",
+        error: event.detail?.error,
+      }),
+    );
+  }
   const idempotencyId = cardAuthResponse.value?.paymentIdempotencyId;
 
   if (!idempotencyId) {
@@ -350,7 +445,7 @@ async function pollPaymentStatus(paymentIdempotencyId: string) {
     pollingAttempts.value++;
     const response = await paymentsService.getPaymentStatusByID(
       paymentIdempotencyId,
-      { env: environment }
+      { env: environment },
     );
 
     const finalStatuses = ["FAILED", "REJECTED", "COMPLETED", "CANCELLED"];
@@ -399,8 +494,6 @@ async function handleRetry() {
   await initialize();
 }
 
-// --- Lifecycle ---
-
 watch(cardCheckoutId, (newVal, oldVal) => {
   if (newVal && newVal !== oldVal) {
     isIn3dsFlow.value = false;
@@ -431,11 +524,9 @@ onBeforeUnmount(() => {
   removeRapydEventListeners();
   removeExternalRapydContainer();
 
-  // Clean up any iframe that was moved into shadow DOM placeholder
-  if (rapydPlaceholderRef.value) {
-    while (rapydPlaceholderRef.value.firstChild) {
-      rapydPlaceholderRef.value.removeChild(rapydPlaceholderRef.value.firstChild);
-    }
+  // Clean up the iframe that was moved into shadow DOM placeholder
+  if (rapydPlaceholderRef.value?.firstChild) {
+    rapydPlaceholderRef.value.removeChild(rapydPlaceholderRef.value.firstChild);
   }
 
   if (rapydCheckout.value) {
