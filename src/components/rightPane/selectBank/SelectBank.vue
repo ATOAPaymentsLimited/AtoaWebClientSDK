@@ -77,7 +77,7 @@
 import { computed, inject, onMounted, ref, watch, type ComputedRef, type Ref } from 'vue';
 import searchIcon from '@/assets/images/icon_search.svg';
 import mastercardIcon from '@/assets/images/card_mastercard.svg';
-import visaIcon from '@/assets/images/card_visa.svg';
+import visaIcon from '@/assets/images/card_visa.webp';
 import googlePayIcon from '@/assets/images/card_google_pay.svg';
 import applePayIcon from '@/assets/images/card_apple_pay.svg';
 import { PaymentsService } from '@/core/services/PaymentsService';
