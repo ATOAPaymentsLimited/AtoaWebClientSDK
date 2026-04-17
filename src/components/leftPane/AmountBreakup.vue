@@ -18,8 +18,9 @@
 </template>
 
 <script setup lang="ts">
-import type PaymentDetails from '@/core/types/PaymentDetails';
-import { computed, type PropType } from 'vue';
+import type PaymentDetails from "@/core/types/PaymentDetails";
+import { roundToTwoDecimals } from "@/core/utils/common";
+import { computed, type PropType } from "vue";
 
 const props = defineProps({
   isExpanded: {
@@ -34,19 +35,21 @@ const props = defineProps({
 
 const finalAmount = computed(() => {
   const originalAmount = props.paymentDetails?.amount?.amount ?? 0;
-  return Number(originalAmount - calculateServiceCharge.value - calculateTax.value);
+  return roundToTwoDecimals(
+    originalAmount - calculateServiceCharge.value - calculateTax.value,
+  );
 });
 
 const calculateServiceCharge = computed(() => {
   const amount = props.paymentDetails?.amount?.amount ?? 0;
   const percentage = props.paymentDetails?.servicePercentage ?? 0;
-  return Number((amount * percentage) / 100);
+  return roundToTwoDecimals((amount * percentage) / 100);
 });
 
 const calculateTax = computed(() => {
   const amount = props.paymentDetails?.amount?.amount ?? 0;
   const percentage = props.paymentDetails?.taxPercentage ?? 0;
-  return Number((amount * percentage) / 100);
+  return roundToTwoDecimals((amount * percentage) / 100);
 });
 </script>
 
