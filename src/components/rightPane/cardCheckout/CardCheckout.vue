@@ -1,9 +1,6 @@
 <template>
   <div class="card-checkout">
-    <div
-      v-if="isLoading || authError"
-      class="card-loading-container"
-    >
+    <div v-if="isLoading || authError" class="card-loading-container">
       <div v-if="!authError" class="loading-state">
         <img
           src="https://atoa-gifs.s3.eu-west-2.amazonaws.com/animated_grid.gif"
@@ -41,7 +38,13 @@
 
     <!-- Pay by bank upsell banner -->
     <div
-      v-if="isIframeReady && !isLoading && !showCardError && !isIn3dsFlow && !isCardOnlyFlow"
+      v-if="
+        isIframeReady &&
+        !isLoading &&
+        !showCardError &&
+        !isIn3dsFlow &&
+        !isCardOnlyFlow
+      "
       class="pay-by-bank-banner"
     >
       <img :src="quickModeIcon" alt="" class="banner-icon" />
@@ -80,6 +83,7 @@ import {
   watch,
   nextTick,
   type Ref,
+  type ComputedRef,
 } from "vue";
 import { PaymentsService } from "@/core/services/PaymentsService";
 import { loadRapydCheckoutToolkit } from "@/core/utils/rapydLoader";
@@ -109,6 +113,7 @@ const environment =
   inject<EnvironmentTypeEnum>("environment") ?? EnvironmentTypeEnum.PRODUCTION;
 const rapydToolkitReady = inject<Ref<boolean>>("rapydToolkitReady");
 const errorHandler = inject<ErrorEventHandler>("errorHandler");
+const isMobileWidth = inject<ComputedRef<boolean>>("isMobileWidth");
 
 const merchantName = computed(
   () => paymentDetails?.value?.merchantBusinessName || "the merchant",
@@ -166,12 +171,14 @@ function watchForRapydIframe() {
     if (iframe && rapydPlaceholderRef.value) {
       observer.disconnect();
 
-      // Override Rapyd's default inline styles to fit within the right pane
+      // Override Rapyd's inline styles — CSS :deep() doesn't work in Shadow DOM
+      const isMobile = isMobileWidth?.value;
       iframe.style.cssText = `
-        width: 100% !important;
-        max-width: 100% !important;
-        min-width: 0 !important;
         min-height: 700px !important;
+        width: ${isMobile ? "calc(100% + 64px)" : "calc(100% + 80px)"} !important;
+        max-width: none !important;
+        min-width: 0 !important;
+        margin-left: ${isMobile ? "-32px" : "-40px"} !important;
         border: none !important;
         box-sizing: border-box !important;
       `;
@@ -672,11 +679,47 @@ onBeforeUnmount(() => {
   width: 100%;
   min-height: 0;
   padding-bottom: 24px;
+  overflow: visible;
+
+  :deep(iframe) {
+    min-height: 700px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    border: none !important;
+    box-sizing: border-box !important;
+
+    &[style*="width"] {
+      width: 100% !important;
+    }
+
+    @media only screen and (max-width: 1024px) {
+      width: calc(100% + 64px) !important;
+      max-width: none !important;
+
+      &[style*="width"] {
+        width: calc(100% + 64px) !important;
+      }
+    }
+  }
+
+  :deep(#rapyd-checkout) {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  :deep(#rapyd-checkout *[style*="width"]) {
+    max-width: 100% !important;
+  }
 }
 
 .rapyd-checkout-container.iframe-constrained {
   min-height: 0;
   overflow: hidden;
+
+  :deep(iframe) {
+    min-height: 0 !important;
+  }
 }
 
 .error-state {
