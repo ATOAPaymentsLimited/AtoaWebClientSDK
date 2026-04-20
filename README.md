@@ -126,19 +126,9 @@ const sdk = new AtoaWebSdk({
 - **Security**: The information about previously used banks is securely stored by Atoa, not in your application.
 - **Optional**: This parameter is optional. If not provided, each payment will be treated as a new transaction without showing previously used banks.
 
-### Card Payments
-
-The SDK supports card payments as an alternative to pay-by-bank. When card payments are enabled on your Atoa account, the payment dialog shows a **"Pay by card"** option that accepts major card networks including Visa and Mastercard, alongside wallet options such as Apple Pay and Google Pay.
-
-Card payments are activated per merchant account — there is no SDK configuration flag to set. If you would like card payments enabled for your account, please contact the [Atoa team](https://help.paywithatoa.co.uk).
-
 #### Apple Pay Setup
 
-Apple Pay requires additional configuration that cannot be completed through the SDK alone. Apple's payment system verifies each domain that accepts Apple Pay, so activation must be done per website.
-
-To enable Apple Pay on your site, contact the [Atoa team](https://help.paywithatoa.co.uk) to start the Apple Pay activation process for your domain.
-
-Once your domain is verified, Apple Pay will appear automatically in the payment dialog on supported Apple devices and browsers.
+To use Apple Pay with the Web SDK, please contact [Support](https://help.paywithatoa.co.uk). We’ll verify your domain ownership with Apple and get everything set up for you. This won’t impact your payments.
 
 ## API Reference
 
@@ -193,7 +183,7 @@ new AtoaWebSdk(options);
 
 ###### onPaymentStatusChange
 
-- Type: 
+- Type:
   ```typescript
   (data: {
     status: string;
@@ -323,7 +313,9 @@ Called when the user cancels the payment.
 For enhanced security, Atoa provides signature data in the `onPaymentStatusChange` and `onClose` callbacks. This signature should be used to verify the authenticity of webhook notifications on your server.
 
 #### Webhook Events
+
 Atoa supports the following webhook events:
+
 - `PAYMENT_STATUS`: Notifications for successful, pending, and failed payments
 - `EXPIRED_STATUS`: Notifications for expired payments
 - `REFUND_STATUS`: Notifications for refund processing (COMPLETED, CANCELLED, FAILED)
