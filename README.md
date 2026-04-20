@@ -9,7 +9,7 @@ The official web client SDK for integrating Atoa Payments into web applications.
 
 ## Overview
 
-The Atoa Web Client SDK allows merchants to easily integrate Atoa Payments into their web applications. The SDK provides a simple interface for showing a payment dialog that handles the entire payment flow securely and efficiently.
+The Atoa Web Client SDK allows merchants to easily integrate Atoa Payments into their web applications. The SDK provides a simple interface for showing a payment dialog that supports both **pay-by-bank** and **card payments** (including Visa, Mastercard, Apple Pay, and Google Pay), handling the entire payment flow securely and efficiently.
 
 ## Installation
 
@@ -125,6 +125,20 @@ const sdk = new AtoaWebSdk({
 - **Returning Customers**: For returning customers, providing the same customerDetails allows the SDK to offer the option to pay with banks they've previously used.
 - **Security**: The information about previously used banks is securely stored by Atoa, not in your application.
 - **Optional**: This parameter is optional. If not provided, each payment will be treated as a new transaction without showing previously used banks.
+
+### Card Payments
+
+The SDK supports card payments as an alternative to pay-by-bank. When card payments are enabled on your Atoa account, the payment dialog shows a **"Pay by card"** option that accepts major card networks including Visa and Mastercard, alongside wallet options such as Apple Pay and Google Pay.
+
+Card payments are activated per merchant account — there is no SDK configuration flag to set. If you would like card payments enabled for your account, please contact the [Atoa team](https://help.paywithatoa.co.uk).
+
+#### Apple Pay Setup
+
+Apple Pay requires additional configuration that cannot be completed through the SDK alone. Apple's payment system verifies each domain that accepts Apple Pay, so activation must be done per website.
+
+To enable Apple Pay on your site, contact the [Atoa team](https://help.paywithatoa.co.uk) to start the Apple Pay activation process for your domain.
+
+Once your domain is verified, Apple Pay will appear automatically in the payment dialog on supported Apple devices and browsers.
 
 ## API Reference
 
