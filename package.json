@@ -1,7 +1,7 @@
 {
   "name": "@atoapayments/atoa-web-client-sdk",
   "private": false,
-  "version": "0.1.1",
+  "version": "0.2.0",
   "type": "module",
   "description": "Official web client SDK for integrating Atoa Payments into web applications",
   "repository": {
@@ -42,7 +42,7 @@
     "gzipper": "gzipper compress ./dist --include cjs,cts,js,ts,d.ts",
     "minify": "terser dist/atoa-web-client-sdk.js -o dist/atoa-web-client-sdk.min.js --compress --mangle && terser dist/atoa-web-client-sdk.umd.cjs -o dist/atoa-web-client-sdk.umd.min.cjs --compress --mangle",
     "cleanup": "rm -f dist/atoa-web-client-sdk.js dist/atoa-web-client-sdk.umd.cjs",
-    "prepublishOnly": "npm run clean && npm run build:prod && npm run build:types && cp -r src/types dist/ && npm run minify && npm run cleanup && npm run gzipper",
+    "prepublishOnly": "npm run clean && npm run build:dev && npm run build:types && cp -r src/types dist/ && npm run minify && npm run cleanup && npm run gzipper",
     "test": "jest --config jest.config.cjs",
     "optimize:svgs": "svgo -f ./src/assets/images"
   },

@@ -112,6 +112,9 @@ const paymentDetails = inject<Ref<PaymentDetails>>("paymentRequestDetails");
 const environment =
   inject<EnvironmentTypeEnum>("environment") ?? EnvironmentTypeEnum.PRODUCTION;
 const rapydToolkitReady = inject<Ref<boolean>>("rapydToolkitReady");
+const cardAuthResponsePromise = inject<
+  Ref<Promise<PaymentAuthResponse> | null>
+>("cardAuthResponsePromise");
 const errorHandler = inject<ErrorEventHandler>("errorHandler");
 const isMobileWidth = inject<ComputedRef<boolean>>("isMobileWidth");
 
@@ -245,10 +248,19 @@ async function fetchCardCheckoutDetails() {
   }
 
   try {
-    const response = await paymentsService.callCardAuthorisationUrl(
-      paymentRequestId,
-      paymentDetails.value,
-    );
+    // Use the preloaded auth response if PaymentDialog kicked one off
+    // while the user was on the bank list screen. Consume it once — any
+    // retry after this falls back to a fresh API call.
+    const preloaded = cardAuthResponsePromise?.value;
+    if (cardAuthResponsePromise) cardAuthResponsePromise.value = null;
+
+    const response = preloaded
+      ? await preloaded
+      : await paymentsService.callCardAuthorisationUrl(
+          paymentRequestId,
+          paymentDetails.value,
+        );
+
     if (response.cardCheckoutId) {
       cardAuthResponse.value = response;
       cardCheckoutId.value = response.cardCheckoutId;
@@ -314,15 +326,20 @@ function initializePayment() {
     // Start watching for the iframe so we can move it into shadow DOM
     watchForRapydIframe();
 
+    const themeBackground =
+      paymentDetails?.value?.merchantThemeDetails?.colorCode ?? "#e42444";
+    const themeForeground =
+      paymentDetails?.value?.merchantThemeDetails?.foregroundColor ?? "white";
+
     rapydCheckout.value = new window.RapydCheckoutToolkit({
       pay_button_text: "Pay Now",
-      pay_button_color: "#e42444",
+      pay_button_color: themeBackground,
       id: cardCheckoutId.value,
       amount: paymentDetails?.value?.amount?.amount?.toFixed(2),
       currency: paymentDetails?.value?.amount?.currency ?? "GBP",
       wait_on_payment_redirect: true,
       style: {
-        submit: { base: { color: "white", padding: 0 } },
+        submit: { base: { color: themeForeground, padding: 0 } },
         body: { boxShadow: "none", padding: 0 },
         container: { padding: 0, margin: 0 },
         div: { padding: 0, margin: 0 },
@@ -556,20 +573,11 @@ onBeforeUnmount(() => {
   overflow-x: hidden;
   position: relative;
   -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
 }
 
-/* Scrollbar styling to match the SDK's existing pattern */
 .card-checkout::-webkit-scrollbar {
-  width: 4px;
-}
-
-.card-checkout::-webkit-scrollbar-thumb {
-  background-color: var(--grey-300);
-  border-radius: 48px;
-}
-
-.card-checkout::-webkit-scrollbar-track {
-  background-color: var(--grey-200);
+  display: none;
 }
 
 .card-loading-container {
