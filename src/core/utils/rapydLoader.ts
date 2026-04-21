@@ -4,8 +4,9 @@ declare global {
   }
 }
 
-const RAPYD_TOOLKIT_URL =
-  import.meta.env.VITE_RAPYD_TOOLKIT_URL ?? "https://sandboxcheckouttoolkit.rapyd.net";
+const RAPYD_TOOLKIT_URL: string =
+  (import.meta.env.VITE_RAPYD_TOOLKIT_URL as string | undefined) ??
+  "https://checkouttoolkit.rapyd.net";
 
 let loadPromise: Promise<void> | null = null;
 
@@ -28,8 +29,8 @@ export function loadRapydCheckoutToolkit(): Promise<void> {
       loadPromise = null;
       reject(
         new Error(
-          "Failed to load Rapyd Checkout Toolkit. This may be blocked by Content Security Policy."
-        )
+          "Failed to load Rapyd Checkout Toolkit. This may be blocked by Content Security Policy.",
+        ),
       );
     };
 

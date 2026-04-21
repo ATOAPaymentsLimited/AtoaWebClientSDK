@@ -29,6 +29,7 @@ import LeftPane from "@/components/leftPane/LeftPane.vue";
 import RightPane from "@/components/rightPane/RightPane.vue";
 import type PaymentDetails from "@/core/types/PaymentDetails";
 import type BankData from "@/core/types/BankData";
+import type PaymentAuthResponse from "@/core/types/PaymentAuthResponse";
 import { PaymentsService } from "@/core/services/PaymentsService";
 import { EnvironmentTypeEnum } from "@/core/types/Environment";
 import type { Failure } from "@/core/utils/http-utils";
@@ -55,6 +56,7 @@ const width = ref(window.innerWidth);
 const isMobileWidth = computed(() => width.value < 1024);
 
 const rapydToolkitReady = ref(false);
+const cardAuthResponsePromise = ref<Promise<PaymentAuthResponse> | null>(null);
 
 provide("isMobileWidth", isMobileWidth);
 provide("banksList", banksList);
@@ -62,6 +64,7 @@ provide("paymentRequestDetails", paymentRequestDetails);
 provide("lastPaymentBankDetails", lastPaymentBankDetails);
 provide("paymentRequestFetchError", paymentRequestFetchError);
 provide("rapydToolkitReady", rapydToolkitReady);
+provide("cardAuthResponsePromise", cardAuthResponsePromise);
 
 onMounted(() => {
   fetchPaymentRequestDetails();
@@ -89,14 +92,26 @@ async function fetchPaymentRequestDetails() {
     lastPaymentBankDetails.value =
       paymentRequestResponseData.lastPaymentBankDetails;
 
-    // Preload Rapyd toolkit while user browses banks.
-    // If this fails, CardCheckout.initialize() will retry the load itself.
+    // Preload Rapyd toolkit script and create the card checkout session
+    // while the user browses banks — so clicking "Pay by card" shows the
+    // Rapyd form instantly without a loading state.
+    // If either fails, CardCheckout will retry on mount.
     if (paymentRequestResponseData.options?.cardPaymentEnabled) {
       loadRapydCheckoutToolkit()
         .then(() => {
           rapydToolkitReady.value = true;
         })
         .catch(() => {});
+
+      const preloadPromise = paymentsService.callCardAuthorisationUrl(
+        paymentRequestId,
+        paymentRequestResponseData,
+      );
+      cardAuthResponsePromise.value = preloadPromise;
+      // Attach a no-op catch so browsers don't flag "unhandled promise
+      // rejection" if the user never opens the card view. CardCheckout
+      // re-awaits the original promise and surfaces errors there.
+      preloadPromise.catch(() => {});
     }
   } catch (error) {
     if (errorHandler) {
@@ -165,6 +180,11 @@ onBeforeUnmount(() => {
   overflow: auto;
   display: flex;
   flex-direction: column;
+  scrollbar-width: none;
+}
+
+.payment-dialog::-webkit-scrollbar {
+  display: none;
 }
 
 .content-row {
@@ -242,6 +262,7 @@ onBeforeUnmount(() => {
   .payment-dialog {
     width: 100%;
     height: auto;
+    max-height: 90vh;
     border-radius: 16px 16px 0 0;
   }
 
