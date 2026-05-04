@@ -24,6 +24,7 @@
         :banks="banks"
         :selected-type="selectedType"
         :selected-bank="selectedBank"
+        :max-rows="gridMaxRows"
         @select="handleBankSelect"
         @show-overlay="(bankData) => emit('showOverlay', bankData)"
       />
@@ -87,8 +88,12 @@ const lastPaymentBankDetails = inject<Ref<LastPaymentBankDetails | undefined>>('
 const paymentDetails = inject<Ref<PaymentDetails>>('paymentRequestDetails');
 const environment = inject<EnvironmentTypeEnum>('environment');
 const isMobileWidth = inject<ComputedRef<boolean>>('isMobileWidth');
+const isShortViewport = inject<ComputedRef<boolean>>('isShortViewport');
 const paymentsService = new PaymentsService();
 const cardPaymentEnabled = computed(() => !!paymentDetails?.value?.options?.cardPaymentEnabled);
+const gridMaxRows = computed(() =>
+  !isMobileWidth?.value && isShortViewport?.value ? 2 : 3,
+);
 
 if (lastPaymentBankDetails) {
   watch(lastPaymentBankDetails, (newValue) => {

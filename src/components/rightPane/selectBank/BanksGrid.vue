@@ -23,11 +23,19 @@ import type PaymentDetails from "@/core/types/PaymentDetails";
 import BankGridItem from "@/components/rightPane/selectBank/BankGridItem.vue";
 import ViewAllButton from "@/components/rightPane/selectBank/ViewAllButton.vue";
 
-const props = defineProps<{
-  banks: BankData[];
-  selectedType: "personal" | "business";
-  selectedBank?: BankData;
-}>();
+const props = withDefaults(
+  defineProps<{
+    banks: BankData[];
+    selectedType: "personal" | "business";
+    selectedBank?: BankData;
+    maxRows?: number;
+  }>(),
+  {
+    maxRows: 3,
+  },
+);
+
+const totalSlots = computed(() => props.maxRows * 4);
 
 defineEmits<{
   (e: "select", bank: BankData): void;
@@ -65,26 +73,29 @@ const sortedBanksByType = computed(() => {
   ];
 });
 
-// When card payments are enabled and we have >12 banks, show the first 11
-// to make room for the "View all" tile in the 12th slot (3 rows × 4 cols).
+// When card payments are enabled and we have more banks than fit the grid,
+// reserve the last slot for the "View all" tile and show banks up to that slot.
 const banksToDisplay = computed(() => {
   if (
     !showAllBanks.value &&
     cardPaymentEnabled.value &&
-    sortedBanksByType.value.length > 12
+    sortedBanksByType.value.length > totalSlots.value
   ) {
-    return sortedBanksByType.value.slice(0, 11);
+    return sortedBanksByType.value.slice(0, totalSlots.value - 1);
   }
   return sortedBanksByType.value;
 });
 
 const nextFourBanks = computed(() =>
-  sortedBanksByType.value.slice(11, 15),
+  sortedBanksByType.value.slice(totalSlots.value - 1, totalSlots.value + 3),
 );
 
 const showViewAllButton = computed(() => {
   if (showAllBanks.value || !cardPaymentEnabled.value) return false;
-  return sortedBanksByType.value.length > 12 && nextFourBanks.value.length > 0;
+  return (
+    sortedBanksByType.value.length > totalSlots.value &&
+    nextFourBanks.value.length > 0
+  );
 });
 </script>
 

@@ -732,7 +732,7 @@ const closeOverlay = () => {
   }
 
   .header-title-row {
-    justify-content: center;
+    justify-content: flex-start;
   }
 
   .view-content {
