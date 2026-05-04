@@ -53,12 +53,15 @@ const customerDetails = inject<CustomerDetails>("customerDetails");
 const errorHandler = inject<ErrorEventHandler>("errorHandler");
 
 const width = ref(window.innerWidth);
+const height = ref(window.innerHeight);
 const isMobileWidth = computed(() => width.value < 1024);
+const isShortViewport = computed(() => height.value < 900);
 
 const rapydToolkitReady = ref(false);
 const cardAuthResponsePromise = ref<Promise<PaymentAuthResponse> | null>(null);
 
 provide("isMobileWidth", isMobileWidth);
+provide("isShortViewport", isShortViewport);
 provide("banksList", banksList);
 provide("paymentRequestDetails", paymentRequestDetails);
 provide("lastPaymentBankDetails", lastPaymentBankDetails);
@@ -145,6 +148,7 @@ async function fetchBanksList() {
 
 const handleResize = () => {
   width.value = window.innerWidth;
+  height.value = window.innerHeight;
 };
 
 onMounted(() => {
@@ -293,7 +297,7 @@ onBeforeUnmount(() => {
     height: auto;
   }
 
-  .left-pane {
+  .content-left {
     display: none;
   }
 
