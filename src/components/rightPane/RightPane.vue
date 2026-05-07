@@ -735,6 +735,15 @@ const closeOverlay = () => {
     justify-content: flex-start;
   }
 
+  .header-title-row:has(.payment-details-header) {
+    justify-content: center;
+  }
+
+  .sdk-right-pane-header-text:has(.payment-details-header) {
+    padding-left: 48px;
+    box-sizing: border-box;
+  }
+
   .view-content {
     padding: 0;
   }
