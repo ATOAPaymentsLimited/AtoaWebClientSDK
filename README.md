@@ -9,7 +9,7 @@ The official web client SDK for integrating Atoa Payments into web applications.
 
 ## Overview
 
-The Atoa Web Client SDK allows merchants to easily integrate Atoa Payments into their web applications. The SDK provides a simple interface for showing a payment dialog that handles the entire payment flow securely and efficiently.
+The Atoa Web Client SDK allows merchants to easily integrate Atoa Payments into their web applications. The SDK provides a simple interface for showing a payment dialog that supports both **pay-by-bank** and **card payments** (including Visa, Mastercard, Apple Pay, and Google Pay), handling the entire payment flow securely and efficiently.
 
 ## Installation
 
@@ -126,6 +126,10 @@ const sdk = new AtoaWebSdk({
 - **Security**: The information about previously used banks is securely stored by Atoa, not in your application.
 - **Optional**: This parameter is optional. If not provided, each payment will be treated as a new transaction without showing previously used banks.
 
+#### Apple Pay Setup
+
+To use Apple Pay with the Web SDK, please contact [Support](https://help.paywithatoa.co.uk). We’ll verify your domain ownership with Apple and get everything set up for you. This won’t impact your payments.
+
 ## API Reference
 
 ### Constructor
@@ -179,7 +183,7 @@ new AtoaWebSdk(options);
 
 ###### onPaymentStatusChange
 
-- Type: 
+- Type:
   ```typescript
   (data: {
     status: string;
@@ -309,7 +313,9 @@ Called when the user cancels the payment.
 For enhanced security, Atoa provides signature data in the `onPaymentStatusChange` and `onClose` callbacks. This signature should be used to verify the authenticity of webhook notifications on your server.
 
 #### Webhook Events
+
 Atoa supports the following webhook events:
+
 - `PAYMENT_STATUS`: Notifications for successful, pending, and failed payments
 - `EXPIRED_STATUS`: Notifications for expired payments
 - `REFUND_STATUS`: Notifications for refund processing (COMPLETED, CANCELLED, FAILED)

@@ -71,4 +71,5 @@ export default interface PaymentDetails {
   paymentSourceType?: SourceTypeEnum;
   redirectOnCompleted?: boolean;
   lastPaymentBankDetails?: LastPaymentBankDetails;
+  paymentMethod?: string;
 }

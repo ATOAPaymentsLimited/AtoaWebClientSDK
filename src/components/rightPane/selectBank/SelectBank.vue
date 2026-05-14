@@ -1,25 +1,5 @@
 <template>
   <div class="select-bank">
-    <div class="search-container">
-      <div class="search-input" :class="{'border-active': isSearching, 'mobile': isMobileWidth}">
-        <img :src="searchIcon" alt="Search" class="search-icon">
-        <div class="input-container">
-          <input 
-            type="text" 
-            v-model="searchQuery" 
-            placeholder="Search your personal bank"
-            :class="{'has-placeholder': !isSearching}"
-            @click="handleSearchBarClick">
-          <div v-if="!isSearching" class="placeholder-overlay">
-            <span class="static-text">Search your</span>
-            <AnimatedBankType class="animated-text"/>
-          </div>
-        </div>
-        <img v-if="isSearching" src="@/assets/images/icon_close.svg" alt="Clear" class="clear-icon"
-          @click="handleSearchBarCloseClick">
-      </div>
-    </div>
-
     <div class="content" :class="{'mobile': isMobileWidth}" v-if="isLoading">
       <div class="loading-state">
         <img src="https://atoa-gifs.s3.eu-west-2.amazonaws.com/animated_grid.gif" alt="Loading"
@@ -37,31 +17,50 @@
     </div>
 
     <div class="content" :class="{'mobile': isMobileWidth}" v-else>
-      <transition name="fade-slide">
-        <div v-if="!isSearching">
-          <BankTabs v-model="selectedType" />
-          <PopularBanks :banks="banks" :selected-type="selectedType" :selected-bank="selectedBank"
-            @select="handleBankSelect" @show-overlay="(bankData) => emit('showOverlay', bankData)" />
+      <div class="bank-tabs-wrapper">
+        <BankTabs v-model="selectedType" />
+      </div>
+      <BanksGrid
+        :banks="banks"
+        :selected-type="selectedType"
+        :selected-bank="selectedBank"
+        :max-rows="gridMaxRows"
+        @select="handleBankSelect"
+        @show-overlay="(bankData) => emit('showOverlay', bankData)"
+      />
+      <div v-if="cardPaymentEnabled" class="pay-by-card-section">
+        <div class="pay-by-card-button" @click="emit('selectCard')">
+          <span class="pay-by-card-text">Card payment options</span>
+          <div class="card-icons-container">
+            <div class="card-icon-badge">
+              <img :src="mastercardIcon" alt="Mastercard" />
+            </div>
+            <div class="card-icon-badge">
+              <img :src="visaIcon" alt="Visa" />
+            </div>
+            <div class="card-icon-badge">
+              <img :src="googlePayIcon" alt="Google Pay" />
+            </div>
+            <div class="card-icon-badge">
+              <img :src="applePayIcon" alt="Apple Pay" />
+            </div>
+          </div>
         </div>
-      </transition>
-      <div class="banks-container">
-        <BankList :banks="banks" :is-searching="isSearching" :search-query="searchQuery" :selected-type="selectedType"
-          :selected-bank="selectedBank" @select="handleBankSelect"
-          @show-overlay="(bankData) => emit('showOverlay', bankData)" />
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { inject, onMounted, ref, watch, type ComputedRef, type Ref } from 'vue';
-import searchIcon from '@/assets/images/icon_search.svg';
+import { computed, inject, onMounted, ref, watch, type ComputedRef, type Ref } from 'vue';
+import mastercardIcon from '@/assets/images/card_mastercard.svg';
+import visaIcon from '@/assets/images/card_visa.webp';
+import googlePayIcon from '@/assets/images/card_google_pay.svg';
+import applePayIcon from '@/assets/images/card_apple_pay.svg';
 import { PaymentsService } from '@/core/services/PaymentsService';
 import type BankData from '@/core/types/BankData';
 import BankTabs from '@/components/rightPane/selectBank/BankTabs.vue';
-import PopularBanks from '@/components/rightPane/selectBank/PopularBanks.vue';
-import BankList from '@/components/rightPane/selectBank/BankList.vue';
-import AnimatedBankType from '@/components/rightPane/selectBank/AnimatedBankType.vue';
+import BanksGrid from '@/components/rightPane/selectBank/BanksGrid.vue';
 import type LastPaymentBankDetails from '@/core/types/LastPaymentBankDetails';
 import type PaymentDetails from '@/core/types/PaymentDetails';
 import { EnvironmentTypeEnum } from '@/core/types/Environment';
@@ -69,6 +68,7 @@ import { DEFAULT_TRANSACTION_LIMIT } from '@/core/utils/constants';
 
 const emit = defineEmits<{
   (e: 'selectBank', bank: BankData): void,
+  (e: 'selectCard'): void,
   (e: 'showOverlay', bank: BankData): void
 }>();
 
@@ -79,8 +79,6 @@ const props = defineProps({
   }
 });
 
-const searchQuery = ref('');
-const isSearching = ref(false);
 const isLoading = ref(false);
 const banks = ref<BankData[]>([]);
 const selectedType = ref<'personal' | 'business'>('personal');
@@ -90,7 +88,12 @@ const lastPaymentBankDetails = inject<Ref<LastPaymentBankDetails | undefined>>('
 const paymentDetails = inject<Ref<PaymentDetails>>('paymentRequestDetails');
 const environment = inject<EnvironmentTypeEnum>('environment');
 const isMobileWidth = inject<ComputedRef<boolean>>('isMobileWidth');
+const isShortViewport = inject<ComputedRef<boolean>>('isShortViewport');
 const paymentsService = new PaymentsService();
+const cardPaymentEnabled = computed(() => !!paymentDetails?.value?.options?.cardPaymentEnabled);
+const gridMaxRows = computed(() =>
+  !isMobileWidth?.value && isShortViewport?.value ? 2 : 3,
+);
 
 if (lastPaymentBankDetails) {
   watch(lastPaymentBankDetails, (newValue) => {
@@ -110,16 +113,6 @@ const handleBankSelect = (bank: BankData) => {
   selectedBank.value = bank;
   emit('selectBank', bank);
 };
-
-const handleSearchBarClick = () => {
-  searchQuery.value = '';
-  isSearching.value = true;
-}
-
-const handleSearchBarCloseClick = () => {
-  searchQuery.value = '';
-  isSearching.value = false;
-}
 
 onMounted(() => {
   fetchBanksList();
@@ -201,103 +194,16 @@ function handlePreselectedBank() {
   justify-content: center;
 }
 
-.search-container {
-  margin-bottom: 24px;
-}
-
-.search-input {
-  background: var(--grey-50);
-  border-radius: 100px;
-  border: 1px solid var(--grey-200);
-  padding: 10px 16px;
-  height: 20px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  position: relative;
-  margin-right: 36px;
-
-  &.mobile {
-    margin-right: 0px;
-  }
-}
-
-.search-input.border-active {
-  border: 1px solid var(--grey-300);
-}
-
-.search-icon {
-  color: var(--grey-400);
-  font-size: 20px;
-}
-
-.clear-icon {
-  cursor: pointer;
-  width: 12px;
-  height: 16px;
-  opacity: 0.6;
-  object-fit: contain;
-}
-
-.clear-icon:hover {
-  opacity: 1;
-}
-
-.input-container {
-  position: relative;
-  width: 100%;
-}
-
-.input-container input {
-  border: none;
-  background: none;
-  width: 100%;
-  height: 100%;
-  font-size: 13px;
-  color: var(--base-black);
-  outline: none;
-  font-family: inherit;
-}
-
-.input-container input::placeholder {
-  color: transparent;
-}
-
-.placeholder-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  display: flex;
-  align-items: center;
-  pointer-events: none;
-}
-
-.static-text {
-  color: var(--grey-400);
-  font-size: 13px;
-}
-
-.animated-text {
-  margin-left: 4px;
-  display: flex;
-  align-items: center;
-}
-
-.search-input.border-active .placeholder-overlay {
-  display: none;
-}
-
 .content {
   flex: 1;
   display: flex;
   flex-direction: column;
-  overflow-y: auto; /* Use auto for natural scrollbar behavior */
+  overflow-y: auto;
   padding-right: 24px;
-  padding-bottom: 24px;
+  padding-bottom: 8px;
   margin-right: 8px;
   position: relative;
+  scrollbar-width: none;
 
   &.mobile {
     padding-right: 0px;
@@ -305,24 +211,20 @@ function handlePreselectedBank() {
   }
 }
 
-/* Scrollbar styling */
 .content::-webkit-scrollbar {
-  width: 4px;
-  background: transparent;
-  border-radius: 48px;
+  display: none;
 }
 
-.content::-webkit-scrollbar-track {
-  background: transparent;
+.bank-tabs-wrapper {
+  background: var(--base-white);
 }
 
-.content::-webkit-scrollbar-thumb {
-  background-color: var(--grey-200);
-  border-radius: 3px;
-}
-
-.content::-webkit-scrollbar-thumb:hover {
-  background-color: var(--grey-300);
+@media (max-width: 1024px) {
+  .bank-tabs-wrapper {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
 }
 
 .loading-state {
@@ -348,13 +250,6 @@ function handlePreselectedBank() {
   font-size: 16px;
   font-weight: 500;
   margin: 0;
-}
-
-.banks-container {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  flex-grow: 1;
 }
 
 /* Remove all scrollbar styling */
@@ -424,4 +319,57 @@ function handlePreselectedBank() {
   opacity: 0;
   transform: translateY(-20px);
 }
+
+.pay-by-card-section {
+  margin-top: 24px;
+}
+
+.pay-by-card-button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 12px;
+  background: white;
+  border: 1px solid var(--grey-200);
+  border-radius: 12px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background-color 0.2s;
+  box-sizing: border-box;
+}
+
+.pay-by-card-button:hover {
+  background: var(--grey-50);
+}
+
+.card-icons-container {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.card-icon-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 24px;
+  border: 1.5px solid var(--grey-200);
+  border-radius: 4.8px;
+  overflow: hidden;
+}
+
+.card-icon-badge img {
+  max-width: 80%;
+  max-height: 70%;
+  object-fit: contain;
+}
+
+.pay-by-card-text {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--grey-700);
+}
+
 </style>

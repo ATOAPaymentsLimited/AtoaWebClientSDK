@@ -65,6 +65,8 @@ export const isIos = function () {
   return getOS() == "iOS";
 };
 
+export const roundToTwoDecimals = (value: number) => Math.round(value * 100) / 100;
+
 export const formatDate = (dateString: string) => {
   const timeObj = new Date(dateString);
 

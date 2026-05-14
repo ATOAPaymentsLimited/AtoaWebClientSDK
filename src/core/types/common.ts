@@ -36,8 +36,18 @@ export enum PaymentTypeEnum {
 export enum PaymentDeviceOriginEnum {
   DESKTOP = "DESKTOP",
   MOBILE = "MOBILE",
+  SDK_DESKTOP = "SDK_DESKTOP",
+  SDK_MOBILE = "SDK_MOBILE",
   CONSUMER_APP_ANDROID = "CONSUMER_APP_ANDROID",
   CONSUMER_APP_IOS = "CONSUMER_APP_IOS",
+}
+
+export enum TransactionTypeEnum {
+  CARD = "CARD",
+}
+
+export enum InstitutionIdEnum {
+  RAPYD = "rapyd",
 }
 
 export enum BankTypeEnum {

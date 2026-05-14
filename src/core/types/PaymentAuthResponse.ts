@@ -13,4 +13,5 @@ export default interface PaymentAuthResponse {
   appStoreLink?: string | null;
   androidPackageName?: string | null;
   iOSPackageName?: string | null;
+  cardCheckoutId?: string | null;
 }
