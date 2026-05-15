@@ -119,6 +119,7 @@ import { goToBank, isMobile } from '@/core/utils/common';
 import Shimmer from "@/components/sharedComponents/Shimmer.vue";
 import type { Failure } from "@/core/utils/http-utils";
 import type TransactionDetails from "@/core/types/TransactionDetails";
+import { TransactionStatus } from "@/core/types/TransactionStatusEnum";
 import ArrowIconRight from '@/components/sharedComponents/ArrowIconRight.vue';
 
 const props = defineProps<{
@@ -248,6 +249,9 @@ const checkPaymentRequestStatus = async () => {
     );
 
     if (!['PAYMENT_NOT_INITIATED', 'AWAITING_AUTHORIZATION'].includes(paymentRequestStatusDetails.status ?? 'PAYMENT_NOT_INITIATED')) {
+      if (paymentRequestStatusDetails.status === TransactionStatus.Failed && props.paymentDetails?.allowSdkRetry) {
+        return;
+      }
       if (paymentRequestStatusPollInterval.value) clearInterval(paymentRequestStatusPollInterval.value);
       if (paymentIdempotencyId && paymentRequestStatusDetails.transactionDetails?.[0].paymentIdempotencyId) {
         paymentIdempotencyId.value = paymentRequestStatusDetails.transactionDetails?.[0].paymentIdempotencyId;
