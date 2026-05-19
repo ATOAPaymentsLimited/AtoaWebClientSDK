@@ -16,7 +16,7 @@
     </div>
     <div class="status-info">
       <div class="status-title">Failed</div>
-      <div class="status-message"> 
+      <div class="status-message">
         {{ transactionDetails?.errorDescription ?? "Atoa is working fine but your bank's network is experiencing issues. Please try the payment using a different bank app." }}
       </div>
     </div>
@@ -40,12 +40,19 @@
       class="default-loader" />
   </div>
 
+  <RetryButton
+    v-if="transactionDetails?.status === TransactionStatus.Failed && allowRetry"
+    @retry="$emit('retry')"
+  />
+
   <PaymentDetailsInfo v-if="transactionDetails" :transaction-details="transactionDetails" />
 </template>
 
 <script setup lang="ts">
 import PaymentDetailsInfo from '@/components/rightPane/paymentDetails/PaymentDetailsInfo.vue';
+import RetryButton from '@/components/rightPane/paymentDetails/RetryButton.vue';
 import type TransactionDetails from '@/core/types/TransactionDetails';
+import { TransactionStatus } from '@/core/types/TransactionStatusEnum';
 import { computed, type PropType } from 'vue';
 
 const props = defineProps({
@@ -57,7 +64,16 @@ const props = defineProps({
     type: Boolean,
     required: false,
   },
+  allowRetry: {
+    type: Boolean,
+    required: false,
+    default: false,
+  },
 });
+
+defineEmits<{
+  (e: 'retry'): void;
+}>();
 
 const statusText = computed(() => {
   let text = props.transactionDetails?.pendingTrasactionError;

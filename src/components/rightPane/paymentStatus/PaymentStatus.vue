@@ -15,8 +15,13 @@
     </div>
 
     <div v-show="!showSuccessAnimation" class="next-content slide-up">
-      <PaymentDetailsUI :transaction-details="transactionDetails" :show-pending-transaction-error="showPendingTransactionError"/>
-      <div v-if="transactionDetails" class="redirect-message">
+      <PaymentDetailsUI
+        :transaction-details="transactionDetails"
+        :show-pending-transaction-error="showPendingTransactionError"
+        :allow-retry="shouldShowRetry"
+        @retry="$emit('retry')"
+      />
+      <div v-if="transactionDetails && !shouldShowRetry" class="redirect-message">
         You will be redirected in <strong>{{ formattedCountdown }}</strong>
       </div>
     </div>
@@ -32,6 +37,7 @@ import type PaymentDetails from '@/core/types/PaymentDetails';
 import { PaymentsService } from '@/core/services/PaymentsService';
 import type { DialogCloseEventData, DialogCloseEventHandler, PaymentStatusEventHandler } from '@/core/types/SdkOptions';
 import type TransactionDetails from '@/core/types/TransactionDetails';
+import { TransactionStatus } from '@/core/types/TransactionStatusEnum';
 
 const showSuccessAnimation = ref(false);
 const aligntoYAxisStart = ref(true);
@@ -51,7 +57,14 @@ let previousStatus: string | null = null;
 
 const emit = defineEmits<{
   (e: 'onStatusChange', data: DialogCloseEventData): void;
+  (e: 'retry'): void;
 }>();
+
+const shouldShowRetry = computed(
+  () =>
+    transactionDetails.value?.status === TransactionStatus.Failed &&
+    paymentDetails?.value?.allowSdkRetry === true
+);
 
 const formattedCountdown = computed(() => {
   if (countdown.value >= 60) {
@@ -117,7 +130,7 @@ const pollPaymentStatus = async () => {
       if (result.status === "COMPLETED") {
         showPendingTransactionError.value = false;
         triggerSuccessView();
-      } else {
+      } else if (!shouldShowRetry.value) {
         startRedirectionCountdown(10);
       }
       if(pollInterval) {

@@ -58,7 +58,7 @@
             </div>
 
             <div v-else-if="currentView === ViewType.PaymentStatusView" class="view-container-flex">
-              <PaymentStatus @on-status-change="handleStatusChange"/>
+              <PaymentStatus @on-status-change="handleStatusChange" @retry="handleRetry" />
             </div>
           </div>
         </Transition>
@@ -326,6 +326,19 @@ const handleCardCheckoutClosed = () => {
 
 const handleStatusChange = (data: DialogCloseEventData) => {
   finalStatusData = data;
+};
+
+const handleRetry = () => {
+  paymentIdempotencyId.value = null;
+  finalStatusData = undefined;
+  showPendingCancellationDialog = false;
+  pageAnimationDirection.value = 'backward';
+  const nextView = isCardOnlyFlow.value
+    ? ViewType.CardCheckoutView
+    : selectedBank.value
+      ? ViewType.PaymentOptionsView
+      : ViewType.SelectBankView;
+  setCurrentView(nextView);
 };
 
 const handleClose = () => {
