@@ -1,14 +1,18 @@
 /**
  * Atoa Mock Card simulator — the sandbox stand-in for the Rapyd hosted checkout.
  *
- * The catalogue lives here rather than arriving on the authorization response: these are published
- * test cards, the same list the sandbox docs show, and the backend resolves whatever number is
- * submitted against its own copy. A card that is not in its copy is refused, so this list is a
- * convenience for the tester, never the source of truth for the outcome.
- *
- * Mirrors `types/MockCardSimulator.ts` in the consumer web, which mirrors `mock-card.catalogue.ts`
- * in the payment processor.
+ * A convenience list, never the source of truth: the backend resolves the submitted number against
+ * its own copy and refuses anything else. Mirrors the consumer web, which mirrors the processor's
+ * `mock-card.catalogue.ts`.
  */
+
+/** What a saved card does on a later MIT charge; its PRESENCE is what makes a card savable. */
+export type MockCardSavedBehavior = "SUCCESS";
+
+/** Outcome labels for a save-card payment, named for what happens to the SAVED card. */
+export const SAVED_CARD_TAGS: Record<MockCardSavedBehavior, string> = {
+  SUCCESS: "Saves on a passed 3DS challenge",
+};
 
 /** One selectable test card. */
 export interface MockCardTestCard {
@@ -23,14 +27,12 @@ export interface MockCardTestCard {
 
   /** Whether choosing this card presents the 3DS step. */
   requires3ds: boolean;
+
+  /** Set only on the cards a save-card payment may use — the fact the backend's guard keys on. */
+  savedBehavior?: MockCardSavedBehavior;
 }
 
-/**
- * The published sandbox test cards.
- *
- * Adding a card to the processor's catalogue and not here only means testers cannot pick it from
- * the list; the number would still work if typed.
- */
+/** The published test cards. One missing here can still be typed by hand. */
 export const SANDBOX_TEST_CARDS: readonly MockCardTestCard[] = [
   {
     testCardId: "tc_visa_ok",
@@ -43,12 +45,14 @@ export const SANDBOX_TEST_CARDS: readonly MockCardTestCard[] = [
     pan: "4000 0000 0000 0127",
     tag: "3DS challenge",
     requires3ds: true,
+    savedBehavior: "SUCCESS",
   },
   {
     testCardId: "tc_mastercard_3ds",
     pan: "5555 5555 5555 0127",
     tag: "3DS challenge",
     requires3ds: true,
+    savedBehavior: "SUCCESS",
   },
   {
     testCardId: "tc_mastercard_ok",
@@ -82,12 +86,7 @@ export const SANDBOX_TEST_CARDS: readonly MockCardTestCard[] = [
   },
 ];
 
-/**
- * Request body of the sandbox simulate endpoint.
- *
- * The card details are sent only so a payment that saves the card has something to save: the
- * outcome still comes from the number alone.
- */
+/** Simulate request. Card details ride along only so a save-card payment has something to save. */
 export interface SimulateCardPaymentRequest {
   cardNumber: string;
   threeDsCode?: string;
