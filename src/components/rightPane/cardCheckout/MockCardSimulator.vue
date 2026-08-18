@@ -12,6 +12,14 @@
       <template v-if="step === 'details'">
         <p class="step-title">Card details</p>
 
+        <p v-if="savesCard" class="save-card-note">
+          This payment saves the card, which production only allows after a 3DS
+          challenge. Authenticate with
+          <strong>{{ MOCK_CARD_3DS_CODE }}</strong> to complete the payment and
+          save the card. To simulate a failed payment, enter any other code at
+          the challenge — it fails the payment and saves nothing.
+        </p>
+
         <div class="form-field">
           <label id="test-card-label">Test card</label>
           <div
@@ -185,9 +193,11 @@ import visaMark from "@/assets/images/card_visa.webp";
 import mastercardMark from "@/assets/images/card_mastercard.svg";
 import {
   SANDBOX_TEST_CARDS,
+  SAVED_CARD_TAGS,
   type MockCardTestCard,
 } from "@/core/types/MockCardSimulator";
 import { MockCardSimulatorService } from "@/core/services/MockCardSimulatorService";
+import { MOCK_CARD_3DS_CODE } from "@/core/utils/constants";
 import type PaymentDetails from "@/core/types/PaymentDetails";
 
 /**
@@ -292,12 +302,47 @@ const brandMarkForPan = (pan: string): string | null => {
   return null;
 };
 
+/**
+ * Does this payment save its card?
+ *
+ * Read off the payment request, which is where the merchant set it. Production forces a 3DS challenge
+ * for save-card (Rapyd's `3d_required`), so only the cards that present one can save.
+ */
+const savesCard = computed(
+  () => paymentDetails?.value?.savePaymentMethod === true,
+);
+
+/**
+ * What this card is called in the picker.
+ *
+ * A save-card payment names the outcome by what happens to the SAVED card, because that is the only
+ * thing that separates the cards on offer — all of them take the payment and present the same 3DS
+ * challenge. Any other payment names the outcome by what the payment itself does.
+ *
+ * @param card - The catalogue entry
+ * @returns The label to show
+ */
+const tagFor = (card: MockCardTestCard): string =>
+  savesCard.value && card.savedBehavior !== undefined
+    ? SAVED_CARD_TAGS[card.savedBehavior]
+    : card.tag;
+
+/**
+ * The cards this payment may use.
+ *
+ * A save-card payment gets only the savable ones — keyed on `savedBehavior`, the same fact the
+ * endpoint's guard keys on, rather than on `requires3ds`, which coincides with it today but answers a
+ * different question. Every other payment gets the full list.
+ */
 const pickerOptions = computed<PickerOption[]>(() =>
-  SANDBOX_TEST_CARDS.map((card: MockCardTestCard) => ({
+  SANDBOX_TEST_CARDS.filter(
+    (card: MockCardTestCard) =>
+      !savesCard.value || card.savedBehavior !== undefined,
+  ).map((card: MockCardTestCard) => ({
     key: card.testCardId,
     pan: card.pan,
     panDisplay: maskPan(card.pan),
-    tag: card.tag,
+    tag: tagFor(card),
     brandIcon: brandMarkForPan(card.pan),
     requires3ds: card.requires3ds,
   })),
@@ -485,6 +530,16 @@ const cancel = () => {
   font-size: 16px;
   font-weight: 700;
   margin: 0;
+}
+
+.save-card-note {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background-color: var(--grey-50, #f7f7f7);
+  color: var(--grey-600, #5c5c5c);
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .form-row {
