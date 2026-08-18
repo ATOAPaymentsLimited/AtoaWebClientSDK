@@ -39,7 +39,7 @@
     <!-- Pay by bank upsell banner -->
     <div
       v-if="
-        isIframeReady &&
+        (isIframeReady || isSimulatedCheckout) &&
         !isLoading &&
         !showCardError &&
         !isIn3dsFlow &&
@@ -62,10 +62,26 @@
       </div>
     </div>
 
+    <!-- Sandbox: the Atoa Mock Card simulator stands in for the Rapyd toolkit. A simulated
+         payment has no real checkout session, so there is no iframe to mount. -->
+    <MockCardSimulator
+      v-if="
+        isSimulatedCheckout &&
+        simulatedPaymentIdempotencyId &&
+        !isLoading &&
+        !showCardError
+      "
+      :payment-idempotency-id="simulatedPaymentIdempotencyId"
+      @resolved="onSimulationResolved"
+      @cancel="emit('checkout-closed')"
+    />
+
     <!-- Placeholder: the actual Rapyd iframe renders in a div on document.body
          because the SDK uses Shadow DOM and Rapyd can't find elements inside it -->
     <div
-      v-show="isIframeReady && !isLoading && !showCardError"
+      v-show="
+        !isSimulatedCheckout && isIframeReady && !isLoading && !showCardError
+      "
       ref="rapydPlaceholderRef"
       class="rapyd-checkout-container"
       :class="{ 'iframe-constrained': isIn3dsFlow }"
@@ -94,6 +110,8 @@ import { Failure } from "@/core/utils/http-utils";
 import { AtoaPayWebSDKError } from "@/core/types/Error";
 import type { ErrorEventHandler } from "@/core/types/SdkOptions";
 import quickModeIcon from "@/assets/images/icon_quick_mode.svg";
+import MockCardSimulator from "./MockCardSimulator.vue";
+import { MOCK_CARD_CHECKOUT_PREFIX } from "@/core/utils/constants";
 
 const POLLING_INTERVAL_MS = 2000;
 const MAX_POLLING_ATTEMPTS = 450; // 15 minutes
@@ -140,6 +158,41 @@ const rapydCheckout = ref<any>(null);
 const pollingTimer = ref<ReturnType<typeof setInterval> | null>(null);
 const pollingAttempts = ref(0);
 const cardCheckoutId = ref<string | null>(null);
+
+/**
+ * Is this checkout simulated?
+ *
+ * Keyed on the checkout id, which is the only signal: a `checkout_mockcard_…` id must never reach
+ * the Rapyd toolkit, which rejects it with a 400 because no such session exists on their side.
+ */
+const isSimulatedCheckout = computed(
+  () => cardCheckoutId.value?.startsWith(MOCK_CARD_CHECKOUT_PREFIX) === true,
+);
+
+/** The payment the simulator drives. Only meaningful once the auth response has landed. */
+const simulatedPaymentIdempotencyId = computed(
+  () => cardAuthResponse.value?.paymentIdempotencyId ?? "",
+);
+
+/**
+ * The simulator reached a status. The payment has already run the same execution, status write and
+ * merchant webhook a live card payment does, so this is treated exactly as a returning payment.
+ */
+function onSimulationResolved(status: string) {
+  stopPolling();
+
+  if (status === "COMPLETED") {
+    emit("payment-success", {
+      paymentIdempotencyId: simulatedPaymentIdempotencyId.value,
+    });
+    return;
+  }
+
+  emit("payment-failure", {
+    paymentIdempotencyId: simulatedPaymentIdempotencyId.value,
+    error: status,
+  });
+}
 
 // The Rapyd container lives outside Shadow DOM so the toolkit can find it
 let externalRapydContainer: HTMLDivElement | null = null;
@@ -318,6 +371,9 @@ function removeRapydEventListeners() {
 
 function initializePayment() {
   if (!cardCheckoutId.value || !window.RapydCheckoutToolkit) return;
+
+  if (isSimulatedCheckout.value) return;
+
   isLoading.value = true;
 
   try {
