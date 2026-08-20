@@ -67,11 +67,11 @@
     <MockCardSimulator
       v-if="
         isSimulatedCheckout &&
-        simulatedPaymentIdempotencyId &&
+        cardPaymentIdempotencyId &&
         !isLoading &&
         !showCardError
       "
-      :payment-idempotency-id="simulatedPaymentIdempotencyId"
+      :payment-idempotency-id="cardPaymentIdempotencyId"
       @resolved="onSimulationResolved"
       @cancel="emit('checkout-closed')"
     />
@@ -170,7 +170,7 @@ const isSimulatedCheckout = computed(
 );
 
 /** The payment the simulator drives. Only meaningful once the auth response has landed. */
-const simulatedPaymentIdempotencyId = computed(
+const cardPaymentIdempotencyId = computed(
   () => cardAuthResponse.value?.paymentIdempotencyId ?? "",
 );
 
@@ -183,13 +183,13 @@ function onSimulationResolved(status: string) {
 
   if (status === "COMPLETED") {
     emit("payment-success", {
-      paymentIdempotencyId: simulatedPaymentIdempotencyId.value,
+      paymentIdempotencyId: cardPaymentIdempotencyId.value,
     });
     return;
   }
 
   emit("payment-failure", {
-    paymentIdempotencyId: simulatedPaymentIdempotencyId.value,
+    paymentIdempotencyId: cardPaymentIdempotencyId.value,
     error: status,
   });
 }

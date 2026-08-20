@@ -177,7 +177,7 @@
       </template>
 
       <!-- 3DS challenge, only for a card whose scenario requires it -->
-      <MockCardThreeDs
+      <Mock3ds
         v-else
         @resolve="onThreeDsResolved"
         @cancel="step = 'details'"
@@ -188,7 +188,7 @@
 
 <script lang="ts" setup>
 import { computed, inject, ref, watch, type Ref } from "vue";
-import MockCardThreeDs from "./MockCardThreeDs.vue";
+import Mock3ds from "./Mock3ds.vue";
 import visaMark from "@/assets/images/card_visa.webp";
 import mastercardMark from "@/assets/images/card_mastercard.svg";
 import {
