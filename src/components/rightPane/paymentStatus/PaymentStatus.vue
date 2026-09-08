@@ -56,7 +56,7 @@ const countdown = ref(10);
 let previousStatus: string | null = null;
 
 const emit = defineEmits<{
-  (e: 'onStatusChange', data: DialogCloseEventData): void;
+  (e: 'onStatusChange', data: DialogCloseEventData, statusTimestamp?: string): void;
   (e: 'retry'): void;
 }>();
 
@@ -115,7 +115,7 @@ const pollPaymentStatus = async () => {
       callbackParams: result?.redirectUrlParams,
       atoaSignature: result?.signature,
       atoaSignatureHash: result?.signatureHash,
-    });
+    }, result?.updatedAt);
     if (transactionDetails?.value.status === "PENDING") {
       if (!redirectionTimer) {
         startRedirectionCountdown(180);

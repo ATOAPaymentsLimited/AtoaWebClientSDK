@@ -324,8 +324,13 @@ const handleCardCheckoutClosed = () => {
   }
 };
 
-const handleStatusChange = (data: DialogCloseEventData) => {
+const handleStatusChange = (data: DialogCloseEventData, statusTimestamp?: string) => {
   finalStatusData = data;
+  // Prefer the SERVER's status timestamp; a device clock captured at mount is
+  // both the wrong instant and the wrong clock. Fall back to the device time
+  // at the moment the status arrived if the server field is absent/invalid.
+  const serverTime = statusTimestamp ? new Date(statusTimestamp) : null;
+  timestamp.value = serverTime && !isNaN(serverTime.getTime()) ? serverTime : new Date();
 };
 
 const handleRetry = () => {
