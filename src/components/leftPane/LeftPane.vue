@@ -46,6 +46,7 @@ const leftPaneStyle = computed(() => {
   border-top-left-radius: 16px;
   border-bottom-left-radius: 16px;
   max-width: 50%;
+  min-height: 0;
 }
 
 .spacer {
@@ -61,6 +62,12 @@ const leftPaneStyle = computed(() => {
   background-position: 120% 105%;
   background-repeat: no-repeat;
   padding: 20px;
-  overflow: hidden;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.content-left-bottom::-webkit-scrollbar {
+  display: none;
 }
 </style>
