@@ -185,7 +185,9 @@ describe("PaymentsService", () => {
         merchantId: "merchant1",
         employeeId: "employee1",
         merchantBusinessName: "Business Name",
-        amount: { amount: 100 },
+        // EUR on purpose: the payload used to hardcode "GBP", which mislabelled every payment an
+        // Irish merchant took. A GBP fixture could not tell the echo from the constant.
+        amount: { amount: 100, currency: "EUR" },
         consumerId: "consumer1",
         taxPercentage: 20,
         servicePercentage: 5,
@@ -230,7 +232,7 @@ describe("PaymentsService", () => {
           merchantName: mockPaymentDetails.merchantBusinessName,
           amount: {
             amount: mockPaymentDetails.amount.amount,
-            currency: "GBP",
+            currency: mockPaymentDetails.amount.currency,
           },
           applicationUserId: mockPaymentDetails.consumerId,
           consumerId: mockPaymentDetails.consumerId,
@@ -275,6 +277,58 @@ describe("PaymentsService", () => {
         },
       });
       expect(result).toEqual(mockResponse);
+    });
+
+    // The payload used to hardcode `currency: "GBP"`, which mislabelled every payment an Irish
+    // merchant took as sterling. These assert the ECHO rather than a constant, and are scoped to
+    // the currency alone so they stay green independently of the broader payload assertions.
+    it.each([["EUR"], ["GBP"]])(
+      "echoes the payment's own %s currency into the auth payload",
+      async (currency) => {
+        const mockPaymentDetails = {
+          merchantId: "merchant1",
+          consumerId: "consumer1",
+          amount: { amount: 100, currency },
+        };
+        mockApiClient.makeRequest.mockResolvedValueOnce({});
+
+        await service.callBankAuthorisationUrl(
+          "payment123",
+          mockPaymentDetails as any,
+          { id: "bank1", features: [] } as any
+        );
+
+        expect(mockApiClient.makeRequest).toHaveBeenCalledWith(
+          expect.objectContaining({
+            json: expect.objectContaining({
+              amount: { amount: 100, currency },
+            }),
+          })
+        );
+      }
+    );
+
+    it("sends no currency when the payment names none, rather than guessing one", async () => {
+      const mockPaymentDetails = {
+        merchantId: "merchant1",
+        consumerId: "consumer1",
+        amount: { amount: 100 },
+      };
+      mockApiClient.makeRequest.mockResolvedValueOnce({});
+
+      await service.callBankAuthorisationUrl(
+        "payment123",
+        mockPaymentDetails as any,
+        { id: "bank1", features: [] } as any
+      );
+
+      expect(mockApiClient.makeRequest).toHaveBeenCalledWith(
+        expect.objectContaining({
+          json: expect.objectContaining({
+            amount: { amount: 100, currency: undefined },
+          }),
+        })
+      );
     });
 
     it("should propagate errors from the API call", async () => {
