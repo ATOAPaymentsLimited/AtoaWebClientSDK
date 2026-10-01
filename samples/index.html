@@ -182,6 +182,8 @@
           // which then creates a payment request with Atoa's API
           const paymentRequest = await createPaymentRequest({
             amount: 1.00,
+            // The merchant's own currency — 'GBP' for a UK business, 'EUR' for an Irish one.
+            // The SDK renders whatever the payment is denominated in; it never assumes sterling.
             currency: 'GBP',
             customerDetails: {
               name,
