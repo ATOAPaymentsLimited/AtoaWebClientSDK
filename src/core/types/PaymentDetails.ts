@@ -23,6 +23,7 @@ export interface TipOption {
 }
 
 export default interface PaymentDetails {
+  savePaymentMethod?: boolean;
   merchantBusinessName: string;
   merchantId: string;
   storeImg: string | null;
