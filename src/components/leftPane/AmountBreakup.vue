@@ -3,15 +3,15 @@
     <div class="amount-breakup-content" v-show="isExpanded">
       <div class="amount-row">
         <span>Amount</span>
-        <span>£{{ finalAmount.toFixed(2) }}</span>
+        <span>{{ money(finalAmount) }}</span>
       </div>
       <div class="amount-row">
         <span>Service charge</span>
-        <span>£{{ calculateServiceCharge.toFixed(2) }}</span>
+        <span>{{ money(calculateServiceCharge) }}</span>
       </div>
       <div class="amount-row">
         <span>VAT</span>
-        <span>£{{ calculateTax.toFixed(2) }}</span>
+        <span>{{ money(calculateTax) }}</span>
       </div>
     </div>
   </Transition>
@@ -20,7 +20,10 @@
 <script setup lang="ts">
 import type PaymentDetails from "@/core/types/PaymentDetails";
 import { roundToTwoDecimals } from "@/core/utils/common";
+import { useCurrency } from "@/composables/useCurrency";
 import { computed, type PropType } from "vue";
+
+const { money } = useCurrency();
 
 const props = defineProps({
   isExpanded: {

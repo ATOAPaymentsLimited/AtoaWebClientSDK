@@ -14,7 +14,7 @@
     <ExplainerSteps />
     <div class="trust-badge">
       <img :src="atoaShieldIcon">
-      <span class="trust-text">Trusted by thousands of businesses in the UK</span>
+      <span class="trust-text">Trusted by thousands of businesses</span>
     </div>
   </div>
 </template>
@@ -29,6 +29,7 @@ import ExplainerUIShimmer from '@/components/rightPane/explainer/ExplainerUIShim
 import { getBankLogo } from '@/core/types/BankData';
 import type BankData from '@/core/types/BankData';
 
+
 const props = defineProps({
   isLoading: {
     type: Boolean,
@@ -39,6 +40,7 @@ const props = defineProps({
 const { isLoading } = toRefs(props);
 
 const banksList = inject<BankData[]>('banksList', []);
+
 </script>
 
 <style scoped>

@@ -16,11 +16,21 @@
       </div>
     </div>
 
+    <!-- The country offers no bank rail and no usable card rail, so there is genuinely nothing to
+         pay with. Showing the bank grid here would list banks the payment can never reach. -->
+    <div class="content" :class="{'mobile': isMobileWidth}" v-else-if="!bankRailAvailable && !cardPaymentEnabled">
+      <div class="error-state">
+        <p class="error-title">Payment unavailable</p>
+        <p class="error-message">This merchant has no payment methods available right now. Please contact them to complete your payment.</p>
+      </div>
+    </div>
+
     <div class="content" :class="{'mobile': isMobileWidth}" v-else>
-      <div class="bank-tabs-wrapper">
+      <div class="bank-tabs-wrapper" v-if="bankRailAvailable">
         <BankTabs v-model="selectedType" />
       </div>
       <BanksGrid
+        v-if="bankRailAvailable"
         :banks="banks"
         :selected-type="selectedType"
         :selected-bank="selectedBank"
@@ -65,6 +75,7 @@ import type LastPaymentBankDetails from '@/core/types/LastPaymentBankDetails';
 import type PaymentDetails from '@/core/types/PaymentDetails';
 import { EnvironmentTypeEnum } from '@/core/types/Environment';
 import { DEFAULT_TRANSACTION_LIMIT } from '@/core/utils/constants';
+import { cardPaymentAllowed, bankPaymentAllowed } from "@/core/utils/paymentRails";
 
 const emit = defineEmits<{
   (e: 'selectBank', bank: BankData): void,
@@ -90,7 +101,10 @@ const environment = inject<EnvironmentTypeEnum>('environment');
 const isMobileWidth = inject<ComputedRef<boolean>>('isMobileWidth');
 const isShortViewport = inject<ComputedRef<boolean>>('isShortViewport');
 const paymentsService = new PaymentsService();
-const cardPaymentEnabled = computed(() => !!paymentDetails?.value?.options?.cardPaymentEnabled);
+const cardPaymentEnabled = computed(() => cardPaymentAllowed(paymentDetails?.value));
+// The bank grid is bundled UK-only, so it must never render for a country that does not offer the
+// bank rail at all — Ireland launches card-only.
+const bankRailAvailable = computed(() => bankPaymentAllowed(paymentDetails?.value));
 const gridMaxRows = computed(() =>
   !isMobileWidth?.value && isShortViewport?.value ? 2 : 3,
 );
@@ -142,6 +156,12 @@ async function fetchBanksList() {
 }
 
 function handlePreselectedBank() {
+  // Never auto-select into the bank flow for a country that offers no bank rail. This runs off the
+  // BANK list, which loads in parallel with the payment details, so it can fire before the rails
+  // are known; RightPane redirects card-only payments away, but not re-entering here keeps a
+  // returning Irish customer off the bank screen in the first place.
+  if (!bankRailAvailable.value) return;
+
   const bank = banks.value?.find((bank: BankData) => bank.id === lastPaymentBankDetails?.value?.institutionId);
 
   if (bank && bank.enabled && (bank.transactionAmountLimit ?? DEFAULT_TRANSACTION_LIMIT) >= (paymentDetails?.value.amount.amount ?? 0)) {
