@@ -121,7 +121,7 @@ const sdk = new AtoaWebSdk({
 
 #### Important Notes About Customer Details
 
-- **Customer Identification**: Either email OR both phoneNumber and phoneCountryCode must be provided in customerDetails. If both are provided, phoneNumber and phoneCountryCode will take precedence.
+- **Customer Identification**: Either email OR both phoneNumber and phoneCountryCode must be provided in customerDetails. `phoneCountryCode` is the **customer's** dialling code without a `+` — `"44"` for the UK, `"353"` for Ireland — and is unrelated to the merchant's own country. If both are provided, phoneNumber and phoneCountryCode will take precedence.
 - **Returning Customers**: For returning customers, providing the same customerDetails allows the SDK to offer the option to pay with banks they've previously used.
 - **Security**: The information about previously used banks is securely stored by Atoa, not in your application.
 - **Optional**: This parameter is optional. If not provided, each payment will be treated as a new transaction without showing previously used banks.

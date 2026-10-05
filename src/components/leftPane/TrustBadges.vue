@@ -2,30 +2,25 @@
 <template>
   <footer class="trust-badges-footer">
     <div class="footer-badges">
-      <div class="badge">
-        <img
-          src="@/assets/images/lock-with-tick.svg"
-          alt="ISO 27001 and SOC2 Secure"
-        />
-        <span
-          >ISO 27001 and<br />
-          SOC2 Secure</span
-        >
-      </div>
-      <div class="badge">
-        <img
-          src="@/assets/images/uk_flag.svg"
-          alt="Processed by UK Banks"
-        />
-        <span>Processed by UK Banks</span>
-      </div>
-      <div class="badge">
-        <img src="@/assets/images/fca-shield.svg" alt="Authorised by the FCA" />
-        <span>Authorised by the FCA</span>
+      <div class="badge" v-for="badge in badges" :key="badge.key">
+        <img :src="badge.icon" :alt="badge.label" />
+        <span>{{ badge.label }}</span>
       </div>
     </div>
   </footer>
 </template>
+
+<script setup lang="ts">
+import { computed, inject, type Ref } from "vue";
+import type PaymentDetails from "@/core/types/PaymentDetails";
+import { resolveTrustBadges } from "@/core/utils/regionalContent";
+
+const paymentDetails = inject<Ref<PaymentDetails | undefined>>(
+  "paymentRequestDetails"
+);
+
+const badges = computed(() => resolveTrustBadges(paymentDetails?.value));
+</script>
 
 <style>
 

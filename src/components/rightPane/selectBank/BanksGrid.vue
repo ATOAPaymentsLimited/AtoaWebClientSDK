@@ -22,6 +22,7 @@ import type BankData from "@/core/types/BankData";
 import type PaymentDetails from "@/core/types/PaymentDetails";
 import BankGridItem from "@/components/rightPane/selectBank/BankGridItem.vue";
 import ViewAllButton from "@/components/rightPane/selectBank/ViewAllButton.vue";
+import { cardPaymentAllowed } from "@/core/utils/paymentRails";
 
 const props = withDefaults(
   defineProps<{
@@ -43,8 +44,8 @@ defineEmits<{
 }>();
 
 const paymentDetails = inject<Ref<PaymentDetails>>("paymentRequestDetails");
-const cardPaymentEnabled = computed(
-  () => !!paymentDetails?.value?.options?.cardPaymentEnabled,
+const cardPaymentEnabled = computed(() =>
+  cardPaymentAllowed(paymentDetails?.value),
 );
 
 const showAllBanks = ref(false);
