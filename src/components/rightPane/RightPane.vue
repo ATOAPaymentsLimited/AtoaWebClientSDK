@@ -114,7 +114,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, inject, ref, toRefs, type Ref, type ComputedRef, provide } from 'vue'
+import { computed, inject, ref, toRefs, watch, type Ref, type ComputedRef, provide } from 'vue'
 import ExplainerUI from '@/components/rightPane/explainer/ExplainerUI.vue'
 import SelectBank from '@/components/rightPane/selectBank/SelectBank.vue'
 import Shimmer from "@/components/sharedComponents/Shimmer.vue";
@@ -131,6 +131,7 @@ import { ViewType } from '@/core/types/ViewTypeEnum'
 import type { DialogCloseEventData, DialogCloseEventHandler, UserCancelPaymentEventHandler } from '@/core/types/SdkOptions'
 import type { Failure } from '@/core/utils/http-utils'
 import ArrowIconRight from '@/components/sharedComponents/ArrowIconRight.vue';
+import { cardPaymentAllowed, isCardOnlyCheckout } from "@/core/utils/paymentRails";
 
 type ViewConfig = {
   title: string;
@@ -195,16 +196,44 @@ const pageAnimationDirection = ref<'forward' | 'backward'>('forward');
 
 provide('paymentIdempotencyId', paymentIdempotencyId);
 
-const isCardOnlyFlow = computed(() => {
-  return paymentDetails?.value?.paymentMethod === 'CARD';
-});
+/**
+ * Card is the only way to pay, so there is no bank list to go back to.
+ *
+ * Two independent reasons: the LINK was minted as a card payment (`paymentMethod`), or the
+ * merchant's COUNTRY offers no bank rail at all — Ireland launches card-only. The second is why
+ * this cannot stay a `paymentMethod` check: an Irish merchant's ordinary payment link would
+ * otherwise land on a grid of UK banks it can never use.
+ */
+const isCardOnlyFlow = computed(() => isCardOnlyCheckout(paymentDetails?.value));
+
+// `getInitialView()` runs before the payment details have loaded, so the card-only decision cannot
+// be taken there — it is taken here, once the rails actually arrive.
+//
+// Both bank-side views are redirected, not just the list. The bank list and the payment details are
+// fetched in PARALLEL, so a returning customer whose saved bank resolves first is auto-selected
+// into PaymentOptionsView before the rails are known (`SelectBank.handlePreselectedBank`). Watching
+// only SelectBankView would strand exactly that payer on a bank screen the country cannot serve.
+// `immediate` covers a remount where the value is already true.
+watch(
+  isCardOnlyFlow,
+  (cardOnly) => {
+    if (!cardOnly) return;
+    if (
+      currentView.value === ViewType.SelectBankView ||
+      currentView.value === ViewType.PaymentOptionsView
+    ) {
+      currentView.value = ViewType.CardCheckoutView;
+    }
+  },
+  { immediate: true },
+);
 
 // When card payments are enabled we mount <CardCheckout> in the background
 // (via v-show, not v-if) so the Rapyd toolkit + iframe initialize while the
 // user is still browsing banks. Clicking "Pay by Card" then swaps views
 // instantly with the iframe already rendered.
-const cardPaymentEnabled = computed(
-  () => !!paymentDetails?.value?.options?.cardPaymentEnabled,
+const cardPaymentEnabled = computed(() =>
+  cardPaymentAllowed(paymentDetails?.value),
 );
 
 const showBackButton = computed(
@@ -374,6 +403,10 @@ const confirmClose = () => {
 
 const timestamp = ref(new Date());
 
+// `undefined` locale, not the merchant's: this is a "paid at" stamp, an event the PAYER
+// experienced, so it belongs on their clock and in their conventions. (Contract term dates are the
+// opposite case and take the merchant's timezone — this SDK renders none.) `undefined` means "use
+// the device's own", which is also why no timeZone is passed.
 const formattedTimestamp = computed(() => {
   const date = timestamp.value;
 
@@ -382,14 +415,14 @@ const formattedTimestamp = computed(() => {
     minute: '2-digit',
     hour12: true
   };
-  const time = date.toLocaleTimeString('en-GB', timeOptions);
+  const time = date.toLocaleTimeString(undefined, timeOptions);
 
   const dateOptions: Intl.DateTimeFormatOptions = {
     day: 'numeric',
     month: 'short',
     year: 'numeric'
   };
-  const dateStr = date.toLocaleDateString('en-GB', dateOptions);
+  const dateStr = date.toLocaleDateString(undefined, dateOptions);
 
   return `${time.toUpperCase()} on ${dateStr}`;
 });

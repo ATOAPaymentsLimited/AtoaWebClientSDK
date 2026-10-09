@@ -11,13 +11,18 @@
       <span class="store-location-name-value">{{ storeLocationName }}</span>
     </div>
     <div class="payment-amount">
-      <span class="payment-amount-bold">£{{ props.amount.toFixed(2) }}</span>
+      <span class="payment-amount-bold">{{ money(props.amount) }}</span>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import storeImagePlaceholder from "@/assets/images/store_image_placeholder.svg";
+import { useCurrency } from "@/composables/useCurrency";
+
+// The amount stays a bare Number prop; the currency comes from the injected payment, so this
+// component never has to be handed a currency it would only pass straight through.
+const { money } = useCurrency();
 
 const props = defineProps({
   storeUrl: {

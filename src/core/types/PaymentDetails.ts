@@ -5,6 +5,7 @@ import type StoreDetails from "./StoreDetails";
 import type { PaymentTypeEnum, SourceTypeEnum } from "./common";
 import type { EnvironmentTypeEnum } from "./Environment";
 import type LastPaymentBankDetails from "./LastPaymentBankDetails";
+import type BusinessCountryInfo from "./BusinessCountryInfo";
 
 export interface PaymentDetailsError {
   paymentDetailHasError: boolean;
@@ -23,6 +24,7 @@ export interface TipOption {
 }
 
 export default interface PaymentDetails {
+  savePaymentMethod?: boolean;
   merchantBusinessName: string;
   merchantId: string;
   storeImg: string | null;
@@ -72,4 +74,13 @@ export default interface PaymentDetails {
   redirectOnCompleted?: boolean;
   lastPaymentBankDetails?: LastPaymentBankDetails;
   paymentMethod?: string;
+
+  /**
+   * The business's country — currency, symbol, locale and the rails it offers.
+   *
+   * Optional because peer-to-peer payments have no business, and because a backend that predates
+   * the EU rollout simply will not send it. Absent means "unknown", never "GB": see
+   * `formatMoney` (digits with no symbol) and `paymentRailsAllowed` (all rails allowed).
+   */
+  businessCountryInfo?: BusinessCountryInfo;
 }

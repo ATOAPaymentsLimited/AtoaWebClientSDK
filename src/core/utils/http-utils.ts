@@ -6,6 +6,7 @@ export const api_urls = {
   SECURE_PAYMENT_AUTH: `${baseURL}/payments/v1/secure-payment-auth`,
   GET_PAYMENT_STATUS: `${baseURL}/sdk-payment/status/$id`,
   GET_PAYMENT_STATUS_BY_REQUEST_ID: `${baseURL}/sdk-payment/payment-request/status/$id`,
+  SIMULATE_SANDBOX_CARD_PAYMENT: `${baseURL}/sdk-payment/sandbox/card/$paymentIdempotencyId/simulate`,
 };
 
 export class Failure extends Error {

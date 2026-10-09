@@ -24,7 +24,7 @@
           </div>
         </div>
         <div class="payment-amount">
-          £{{ paymentRequestDetails?.amount?.amount.toFixed(2) ?? 0.00 }}
+          {{ money(paymentRequestDetails?.amount?.amount) }}
         </div>
       </div>
     </div>
@@ -72,7 +72,7 @@
           <ArrowIconRight :color="paymentDetails?.merchantThemeDetails?.foregroundColor" />
         </button>
         <div class="atoa-terms">
-          By continuing, you agreed to Atoa’s <a href="https://paywithatoa.co.uk/terms/" class="footer-link" target="_blank">Terms</a> and <a href="https://paywithatoa.co.uk/atoa-business-privacy-policy/" class="footer-link" target="_blank">Privacy Policy</a>.
+          By continuing, you agreed to Atoa’s <a :href="legal.termsUrl" class="footer-link" target="_blank">Terms</a> and <a :href="legal.privacyUrl" class="footer-link" target="_blank">Privacy Policy</a>.
         </div>
       </div>
       <div v-else class="desktop-footer-section">
@@ -121,6 +121,8 @@ import type { Failure } from "@/core/utils/http-utils";
 import type TransactionDetails from "@/core/types/TransactionDetails";
 import { TransactionStatus } from "@/core/types/TransactionStatusEnum";
 import ArrowIconRight from '@/components/sharedComponents/ArrowIconRight.vue';
+import { useCurrency } from '@/composables/useCurrency';
+import { legalLinks } from '@/core/utils/regionalContent';
 
 const props = defineProps<{
   selectedBank: BankData;
@@ -137,6 +139,9 @@ const bankWebsiteUrl = ref('');
 const isMobileWidth = inject<ComputedRef<boolean>>('isMobileWidth');
 const paymentRequestId = inject<string>('paymentRequestId');
 const paymentRequestDetails = inject<Ref<PaymentDetails>>('paymentRequestDetails');
+const { money } = useCurrency();
+// Terms and privacy are per-country on the wire; both markets point at the same URLs today.
+const legal = computed(() => legalLinks(paymentRequestDetails?.value));
 const environment = inject<EnvironmentTypeEnum>('environment');
 const apiBaseUrl = import.meta.env.VITE_QR_BASE_URL;
 const paymentUrl = computed(() => {
