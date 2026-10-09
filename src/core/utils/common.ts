@@ -67,21 +67,6 @@ export const isIos = function () {
 
 export const roundToTwoDecimals = (value: number) => Math.round(value * 100) / 100;
 
-export const formatDate = (dateString: string) => {
-  const timeObj = new Date(dateString);
-
-  const formattedTime = timeObj.toLocaleDateString("en-US", {
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "numeric",
-    hour12: true,
-  });
-
-  return formattedTime;
-};
-
 export async function goToBank(
   bankRedirectionUrls: BankRedirectionUrls,
   isBusinessBank = false
