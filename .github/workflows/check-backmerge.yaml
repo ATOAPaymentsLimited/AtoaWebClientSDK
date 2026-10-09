@@ -1,0 +1,28 @@
+name: Check Backmerge to Develop
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'Number of the PR into main to re-check'
+        required: true
+        type: string
+
+# A reusable workflow can only narrow the caller's permissions, never widen
+# them, so the grant has to live here.
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  check_backmerge:
+    uses: ATOAPaymentsLimited/.github/.github/workflows/check-backmerge.yaml@main
+    with:
+      pr_number: ${{ inputs.pr_number }}
+    secrets:
+      # named explicitly - `inherit` would pass this as BACKMERGE_PAT and the
+      # reusable's `secrets.token` would silently fall back to github.token
+      token: ${{ secrets.BACKMERGE_PAT }}

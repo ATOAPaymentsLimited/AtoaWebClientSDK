@@ -1,0 +1,19 @@
+name: Auto Backmerge to Develop
+
+on:
+  push:
+    branches:
+      - 'release/**'
+      - 'hotfix/**'
+
+permissions:
+  contents: write        # create the backmerge/* copy branch
+  pull-requests: write
+
+jobs:
+  backmerge_pr:
+    uses: ATOAPaymentsLimited/.github/.github/workflows/auto-backmerge.yaml@main
+    secrets:
+      # named explicitly - `inherit` would pass this as BACKMERGE_PAT and the
+      # reusable's `secrets.token` would silently fall back to github.token
+      token: ${{ secrets.BACKMERGE_PAT }}

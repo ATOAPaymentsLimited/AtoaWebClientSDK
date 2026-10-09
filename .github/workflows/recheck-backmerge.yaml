@@ -1,0 +1,21 @@
+name: Re-run Backmerge Gate
+
+on:
+  push:
+    branches: [develop]
+
+permissions:
+  contents: read
+  pull-requests: write
+  actions: write
+
+jobs:
+  rerun_gate:
+    uses: ATOAPaymentsLimited/.github/.github/workflows/recheck-backmerge.yaml@main
+    with:
+      # must name THIS repo's gate file, not the reusable one
+      gate_workflow: check-backmerge.yaml
+    secrets:
+      # named explicitly - `inherit` would pass this as BACKMERGE_PAT and the
+      # reusable's `secrets.token` would silently fall back to github.token
+      token: ${{ secrets.BACKMERGE_PAT }}
