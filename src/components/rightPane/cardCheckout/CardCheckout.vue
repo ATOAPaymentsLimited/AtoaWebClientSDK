@@ -112,6 +112,8 @@ import type { ErrorEventHandler } from "@/core/types/SdkOptions";
 import quickModeIcon from "@/assets/images/icon_quick_mode.svg";
 import MockCardSimulator from "./MockCardSimulator.vue";
 import { MOCK_CARD_CHECKOUT_PREFIX } from "@/core/utils/constants";
+import { isCardOnlyCheckout } from "@/core/utils/paymentRails";
+import { paymentCurrencyOf } from "@/core/utils/money";
 
 const POLLING_INTERVAL_MS = 2000;
 const MAX_POLLING_ATTEMPTS = 450; // 15 minutes
@@ -139,8 +141,8 @@ const isMobileWidth = inject<ComputedRef<boolean>>("isMobileWidth");
 const merchantName = computed(
   () => paymentDetails?.value?.merchantBusinessName || "the merchant",
 );
-const isCardOnlyFlow = computed(
-  () => paymentDetails?.value?.paymentMethod === "CARD",
+const isCardOnlyFlow = computed(() =>
+  isCardOnlyCheckout(paymentDetails?.value),
 );
 
 const paymentsService = new PaymentsService();
@@ -374,6 +376,12 @@ function initializePayment() {
 
   if (isSimulatedCheckout.value) return;
 
+  // Rapyd needs the real currency, and there is no safe value to invent: mounting with a guessed
+  // "GBP" is how a EUR payment got charged as sterling. Wait for the details instead — this runs
+  // again once they land.
+  const paymentCurrency = paymentCurrencyOf(paymentDetails?.value);
+  if (!paymentCurrency) return;
+
   isLoading.value = true;
 
   try {
@@ -392,7 +400,7 @@ function initializePayment() {
       pay_button_color: themeBackground,
       id: cardCheckoutId.value,
       amount: paymentDetails?.value?.amount?.amount?.toFixed(2),
-      currency: paymentDetails?.value?.amount?.currency ?? "GBP",
+      currency: paymentCurrency,
       wait_on_payment_redirect: true,
       style: {
         submit: { base: { color: themeForeground, padding: 0 } },

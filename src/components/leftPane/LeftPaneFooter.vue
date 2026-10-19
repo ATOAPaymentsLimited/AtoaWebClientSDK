@@ -7,7 +7,7 @@
     <div class="footer-help-section">
       <div class="footer-help-text" :style="{
         color: paymentDetails?.merchantThemeDetails?.foregroundColor
-      }"> By continuing, you agreed to Atoa’s <a href="https://paywithatoa.co.uk/terms/" class="footer-link" target="_blank">Terms of Service</a> and <a href="https://paywithatoa.co.uk/atoa-business-privacy-policy/" class="footer-link" target="_blank">Privacy Policy</a>.
+      }"> By continuing, you agreed to Atoa’s <a :href="legal.termsUrl" class="footer-link" target="_blank">Terms of Service</a> and <a :href="legal.privacyUrl" class="footer-link" target="_blank">Privacy Policy</a>.
       </div>
       <div class="footer-help-text" :style="{
         color: paymentDetails?.merchantThemeDetails?.foregroundColor
@@ -23,10 +23,13 @@
 import RoundedChip from "@/components/sharedComponents/RoundedChip.vue";
 import atoaLogo from "@/assets/images/atoa_logo.svg";
 import type PaymentDetails from "@/core/types/PaymentDetails";
-import { inject, type Ref } from "vue";
+import { computed, inject, type Ref } from "vue";
 import TrustBadges from "./TrustBadges.vue";
+import { legalLinks } from "@/core/utils/regionalContent";
 
 const paymentDetails = inject<Ref<PaymentDetails>>('paymentRequestDetails');
+// Terms and privacy are per-country on the wire; both markets point at the same URLs today.
+const legal = computed(() => legalLinks(paymentDetails?.value));
 </script>
 
 <style scoped>
