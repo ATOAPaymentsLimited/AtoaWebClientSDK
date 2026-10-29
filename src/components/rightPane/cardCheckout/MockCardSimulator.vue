@@ -199,6 +199,7 @@ import {
 import { MockCardSimulatorService } from "@/core/services/MockCardSimulatorService";
 import { MOCK_CARD_3DS_CODE } from "@/core/utils/constants";
 import type PaymentDetails from "@/core/types/PaymentDetails";
+import { useCurrency } from "@/composables/useCurrency";
 
 /**
  * Atoa Mock Card simulator — the sandbox stand-in for the Rapyd hosted checkout.
@@ -226,12 +227,10 @@ type Step = "details" | "threeDs";
 const paymentDetails = inject<Ref<PaymentDetails>>("paymentRequestDetails");
 
 /** What the tester is paying, in the format the live card checkout shows it. */
-const totalDisplay = computed(() => {
-  const currency = paymentDetails?.value?.amount?.currency ?? "GBP";
-  const amount = paymentDetails?.value?.amount?.amount ?? 0;
-
-  return `${currency} ${amount.toFixed(2)}`;
-});
+const { money } = useCurrency();
+const totalDisplay = computed(() =>
+  money(paymentDetails?.value?.amount?.amount)
+);
 
 /**
  * One row in the picker.

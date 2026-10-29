@@ -17,4 +17,7 @@ export default interface TransactionDetails {
   redirectUrlParams?: Record<string, string>;
   signature?: string;
   signatureHash?: string;
+  /** Server-side timestamps (ISO 8601) returned by the payment status API. */
+  createdAt?: string;
+  updatedAt?: string;
 }

@@ -4,6 +4,7 @@ import { apiCall, api_urls } from "@/core/utils/http-utils";
 import type PaymentDetails from "@/core/types/PaymentDetails";
 import type BankData from "@/core/types/BankData";
 import { detectBrowser, isMobile } from "@/core/utils/common";
+import { paymentCurrencyOf } from "@/core/utils/money";
 import {
   InstitutionIdEnum,
   PaymentDeviceOriginEnum,
@@ -74,7 +75,15 @@ export class PaymentsService {
       consumerName: "",
       amount: {
         amount: paymentDetails?.amount?.amount,
-        currency: "GBP",
+        // The payment's own currency when it states one, else the business country's.
+        //
+        // `get-payment-details` does NOT currently return `amount.currency` — verified against dev
+        // for both a GB and an IE business, where `amount` is `{ amount }` alone. So the country is
+        // the only source there is today, and reading `amount.currency` alone would send
+        // `undefined`. Kept first all the same: it is the per-payment answer if the field ever
+        // appears, and a payment must never be relabelled as whatever the merchant usually trades
+        // in. A hardcoded "GBP" here mislabelled every EUR payment an Irish merchant took.
+        currency: paymentCurrencyOf(paymentDetails),
       },
       applicationUserId: consumerId ?? "",
       consumerId: consumerId ?? "",
@@ -146,7 +155,15 @@ export class PaymentsService {
       consumerName: "",
       amount: {
         amount: paymentDetails?.amount?.amount,
-        currency: "GBP",
+        // The payment's own currency when it states one, else the business country's.
+        //
+        // `get-payment-details` does NOT currently return `amount.currency` — verified against dev
+        // for both a GB and an IE business, where `amount` is `{ amount }` alone. So the country is
+        // the only source there is today, and reading `amount.currency` alone would send
+        // `undefined`. Kept first all the same: it is the per-payment answer if the field ever
+        // appears, and a payment must never be relabelled as whatever the merchant usually trades
+        // in. A hardcoded "GBP" here mislabelled every EUR payment an Irish merchant took.
+        currency: paymentCurrencyOf(paymentDetails),
       },
       applicationUserId: consumerId ?? "",
       consumerId: consumerId ?? "",

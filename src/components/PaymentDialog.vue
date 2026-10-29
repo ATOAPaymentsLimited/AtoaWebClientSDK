@@ -38,6 +38,7 @@ import { AtoaPayWebSDKError } from "@/core/types/Error";
 import type LastPaymentBankDetails from "@/core/types/LastPaymentBankDetails";
 import type CustomerDetails from "@/core/types/CustomerDetails";
 import { loadRapydCheckoutToolkit } from "@/core/utils/rapydLoader";
+import { cardPaymentAllowed } from "@/core/utils/paymentRails";
 
 const isFetchingInitialData = ref(true);
 const paymentRequestDetails = ref<PaymentDetails>();
@@ -99,7 +100,7 @@ async function fetchPaymentRequestDetails() {
     // while the user browses banks — so clicking "Pay by card" shows the
     // Rapyd form instantly without a loading state.
     // If either fails, CardCheckout will retry on mount.
-    if (paymentRequestResponseData.options?.cardPaymentEnabled) {
+    if (cardPaymentAllowed(paymentRequestResponseData)) {
       loadRapydCheckoutToolkit()
         .then(() => {
           rapydToolkitReady.value = true;
