@@ -1,0 +1,12 @@
+#!/bin/sh
+# installed-by-bodhiorchard (pre-commit)
+BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+BUD_NUM=$(echo "$BRANCH" | sed -n 's/^bud-\([0-9]*\)\/.*/\1/p')
+[ -z "$BUD_NUM" ] && exit 0
+
+STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+  "https://garden.atoa.me/api/v1/public/77002943-ecbe-417f-9fec-8689ab8b3401/bud-check/$BUD_NUM" 2>/dev/null)
+if [ "$STATUS" = "404" ]; then
+  echo "BUD-$BUD_NUM not found in Glideship. Commit blocked."
+  exit 1
+fi
