@@ -44,7 +44,8 @@
     "cleanup": "rm -f dist/atoa-web-client-sdk.js dist/atoa-web-client-sdk.umd.cjs",
     "prepublishOnly": "npm run clean && npm run build:prod && npm run build:types && cp -r src/types dist/ && npm run minify && npm run cleanup && npm run gzipper",
     "test": "jest --config jest.config.cjs",
-    "optimize:svgs": "svgo -f ./src/assets/images"
+    "optimize:svgs": "svgo -f ./src/assets/images",
+    "prepare": "git config core.hooksPath .githooks"
   },
   "devDependencies": {
     "@chenfengyuan/vue-qrcode": "^2.0.0",

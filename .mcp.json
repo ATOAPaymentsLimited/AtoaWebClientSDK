@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "glideship": {
+      "command": "python3",
+      "args": [
+        ".glideship/mcp_bridge.py"
+      ],
+      "env": {
+        "GLIDESHIP_BACKEND_URL": "https://garden.atoa.me"
+      }
+    }
+  }
+}
